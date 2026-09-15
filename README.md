@@ -1,59 +1,90 @@
-## About MeshCore
+## Acerca de MeshCore
 
-MeshCore is a lightweight, portable C++ library that enables multi-hop packet routing for embedded projects using LoRa and other packet radios. It is designed for developers who want to create resilient, decentralized communication networks that work without the internet.
+MeshCore es una librería C++ liviana y portable para crear redes mesh de paquetes sobre LoRa y otros radios. Permite que nodos pequeños se comuniquen a larga distancia y que otros nodos repitan los mensajes cuando no hay internet o infraestructura tradicional disponible.
 
-## 🔍 What is MeshCore?
+## 🔍 ¿Qué es MeshCore?
 
-MeshCore now supports a range of LoRa devices, allowing for easy flashing without the need to compile firmware manually. Users can flash a pre-built binary using tools like Adafruit ESPTool and interact with the network through a serial console.
-MeshCore provides the ability to create wireless mesh networks, similar to Meshtastic and Reticulum but with a focus on lightweight multi-hop packet routing for embedded projects. Unlike Meshtastic, which is tailored for casual LoRa communication, or Reticulum, which offers advanced networking, MeshCore balances simplicity with scalability, making it ideal for custom embedded solutions, where devices (nodes) can communicate over long distances by relaying messages through intermediate nodes. This is especially useful in off-grid, emergency, or tactical situations where traditional communication infrastructure is unavailable.
+MeshCore permite crear redes descentralizadas parecidas a Meshtastic o Reticulum, pero con foco en ruteo multi-salto liviano para proyectos embebidos. Es útil para comunicaciones fuera de red, emergencias, zonas rurales, pruebas de radio, sensores e instalaciones donde se necesita resiliencia con bajo consumo.
 
-> **MQTT Observer Setup** — Prebuilt observer firmware, docs, and a changelog are at
-> [observer.gessaman.com](https://observer.gessaman.com/). See the
-> [MQTT Implementation Guide](./MQTT_IMPLEMENTATION.md) for configuration, CLI commands, and
-> troubleshooting.
+Este fork parte del firmware Observer de Gessaman y agrega un perfil listo para Chile, pensado para levantar nodos observadores/repetidores con Heltec V4 y reportar a mapas comunitarios.
 
-## 🇨🇱 MeshChile / Chile Observer profile
+> **Firmware Observer MQTT**: la base original de Gessaman incluye webconfig, MQTT con autenticación JWT, NTP, estadísticas, SNMP y presets de mapas. Este fork mantiene esa base y suma un perfil chileno listo para compilar.
 
-This fork includes a ready-to-build observer profile for Chilean MeshCore nodes, focused on Heltec V4 hardware and community map reporting. It keeps operator secrets out of the firmware image: Wi-Fi credentials, admin passwords, private keys, and exact private coordinates must be configured per node after flashing.
+## 🇨🇱 Perfil MeshChile / Chile Observer
 
-What this fork adds:
+Este fork incluye un perfil público para nodos MeshCore en Chile. Está pensado para que cualquier persona pueda levantar un observer/repeater sin tener que repetir toda la configuración manual de radio, MQTT, mapas y reloj.
 
-- A `meshchile` MQTT preset for `wss://mqtt-msc.meshchile.cl:443/mqtt`, using JWT device authentication and audience `mqtt-msc.meshchile.cl`.
-- A Heltec V4 build target named `heltec_v4_repeater_observer_mqtt_chile`.
-- Chile LoRa defaults: `927.875 MHz`, `62.5 kHz`, `SF8`, `CR5`.
-- TX power default set to `22 dBm`.
-- Default path hash mode set to `1`, which MeshCore uses as 2-byte path hashes.
-- MQTT map/reporting defaults for MeshChile, LetsMesh analyzer EU, and MeshMapper.
-- Timezone default `America/Santiago` and primary NTP server `ntp.shoa.cl`.
-- OLED status improvements showing node name, radio settings, TX power, path hash byte size, and Wi-Fi/IP status.
-- LAN webconfig auto-start for the Chile observer build, so the web panel is available after Wi-Fi connects.
+Lo que agrega este fork:
 
-Build it with PlatformIO:
+- Preset MQTT `meshchile` para `wss://mqtt-msc.meshchile.cl:443/mqtt`, con autenticación JWT por identidad del dispositivo y audience `mqtt-msc.meshchile.cl`.
+- Target PlatformIO `heltec_v4_repeater_observer_mqtt_chile` para Heltec V4.
+- Radio Chile por defecto: `927.875 MHz`, `62.5 kHz`, `SF8`, `CR5`.
+- Potencia TX por defecto: `22 dBm`.
+- `path.hash.mode = 1`, que en MeshCore equivale a hashes de ruta de 2 bytes.
+- Reporte MQTT por defecto hacia MeshChile, LetsMesh Analyzer EU y MeshMapper.
+- Zona horaria `America/Santiago`.
+- NTP primario `ntp.shoa.cl`.
+- Pantalla OLED mejorada con nombre del nodo, radio, potencia TX, tamaño de hash e IP/WiFi.
+- Panel web LAN automático: cuando el nodo conecta al WiFi, el webconfig queda disponible por la IP del nodo.
+- Terminal web integrada para ejecutar comandos CLI desde el navegador.
+- Soporte documentado para canal privado de alertas del observer.
+
+El firmware público no incluye credenciales personales. Cada operador debe configurar su WiFi, contraseña de administración, llaves MeshCore y ubicación propia después de flashear.
+
+## ⚙️ Compilar
+
+Instala PlatformIO y compila el perfil Chile:
 
 ```bash
 pio run -e heltec_v4_repeater_observer_mqtt_chile
 ```
 
-Flash a Heltec V4 over USB serial:
+## 🔌 Flashear un Heltec V4
+
+Conecta el Heltec V4 por USB y ejecuta:
 
 ```bash
 pio run -e heltec_v4_repeater_observer_mqtt_chile -t upload
 ```
 
-After flashing, configure each operator-specific value from the web panel or serial console. The web panel starts automatically once Wi-Fi is connected; it can also be started manually with `start webconfig`, or as a setup AP with `start webconfig ap`.
+Si necesitas indicar puerto manualmente:
 
-Safe serial fallback template:
+```bash
+pio run -e heltec_v4_repeater_observer_mqtt_chile -t upload --upload-port COM3
+```
+
+## 🌐 Panel web
+
+En el perfil Chile, el panel web se levanta automáticamente cuando el nodo está conectado al WiFi. En la pantalla OLED deberías ver la IP del nodo.
+
+También puedes iniciarlo manualmente por serial:
 
 ```text
-set name <node-name>
-password <strong-admin-password>
-set wifi.ssid <wifi-name>
-set wifi.pwd <wifi-password>
+start webconfig
+```
+
+Para levantar un AP de configuración:
+
+```text
+start webconfig ap
+```
+
+El panel usa la contraseña de administración del nodo. Cámbiala siempre en cada instalación.
+
+## 🧭 Configuración rápida por serial
+
+Plantilla segura para un nodo observer/repeater chileno:
+
+```text
+set name <nombre-del-nodo>
+password <clave-admin-segura>
+set wifi.ssid <nombre-wifi>
+set wifi.pwd <clave-wifi>
 set radio 927.875,62.5,8,5
 set tx 22
 set path.hash.mode 1
-set lat <latitude>
-set lon <longitude>
+set lat <latitud>
+set lon <longitud>
 set mqtt.iata SCL
 set mqtt1.preset meshchile
 set mqtt2.preset analyzer-eu
@@ -68,64 +99,79 @@ set timezone America/Santiago
 advert
 ```
 
-For more detail, see [docs/meshchile-observer.md](./docs/meshchile-observer.md).
+Notas:
 
-## ⚡ Key Features
+- `path.hash.mode 1` significa 2-byte en MeshCore.
+- Usa `SCL`, `VAP` u otro código según la zona/comunidad donde quieras reportar.
+- No publiques coordenadas exactas si el nodo está en una ubicación privada.
 
-* Multi-Hop Packet Routing
-  * Devices can forward messages across multiple nodes, extending range beyond a single radio's reach.
-  * Supports up to a configurable number of hops to balance network efficiency and prevent excessive traffic.
-  * Nodes use fixed roles where "Companion" nodes are not repeating messages at all to prevent adverse routing paths from being used.
-* Supports LoRa Radios – Works with Heltec, RAK Wireless, and other LoRa-based hardware.
-* Decentralized & Resilient – No central server or internet required; the network is self-healing.
-* Low Power Consumption – Ideal for battery-powered or solar-powered devices.
-* Simple to Deploy – Pre-built example applications make it easy to get started.
+## 🚨 Canal de alertas del observer
 
-## 🎯 What Can You Use MeshCore For?
+El firmware Observer puede enviar alertas LoRa por un canal configurado. Esto sirve para que el nodo mande avisos o pruebas desde la terminal web o serial.
 
-* Off-Grid Communication: Stay connected even in remote areas.
-* Emergency Response & Disaster Recovery: Set up instant networks where infrastructure is down.
-* Outdoor Activities: Hiking, camping, and adventure racing communication.
-* Tactical & Security Applications: Military, law enforcement, and private security use cases.
-* IoT & Sensor Networks: Collect data from remote sensors and relay it back to a central location.
+Configura un canal privado así:
 
-## 🚀 How to Get Started
+```text
+set alert.hashtag <#canal-privado>
+set alert on
+alert test
+```
 
-- Watch the [MeshCore QuickStart Playlist](https://www.youtube.com/watch?v=iaFltojJrAc&list=PLshzThxhw4O4WU_iZo3NmNZOv6KMrUuF9) by The Comms Channel
-- Watch the [MeshCore Technical Presentation](https://www.youtube.com/watch?v=OwmkVkZQTf4) by Liam Cottle.
-- Read through our [Frequently Asked Questions](./docs/faq.md) and [Documentation](https://docs.meshcore.io).
-- Flash the MeshCore firmware on a supported device.
-- Connect with a supported client.
+Si tienes una clave de canal explícita de 16 bytes en hexadecimal, úsala así:
 
-For developers:
+```text
+set alert.psk <clave-hex-de-32-caracteres>
+set alert on
+alert test
+```
 
-- Install [PlatformIO](https://docs.platformio.org) in [Visual Studio Code](https://code.visualstudio.com).
-- Clone and open the MeshCore repository in Visual Studio Code.
-- See the example applications you can modify and run:
-  - [Companion Radio](./examples/companion_radio) - For use with an external chat app, over BLE, USB or Wi-Fi.
-  - [KISS Modem](./examples/kiss_modem) - Serial KISS protocol bridge for host applications. ([protocol docs](./docs/kiss_modem_protocol.md))
-  - [Simple Repeater](./examples/simple_repeater) - Extends network coverage by relaying messages.
-  - [Simple Room Server](./examples/simple_room_server) - A simple BBS server for shared Posts.
-  - [Simple Secure Chat](./examples/simple_secure_chat) - Secure terminal based text communication between devices.
-  - [Simple Sensor](./examples/simple_sensor) - Remote sensor node with telemetry and alerting.
+No publiques la clave del canal en GitHub. Si usas `set alert.psk`, el firmware guarda la clave y puede dejar `alert.hashtag` como `(unset)`, lo cual es normal: la PSK pasa a ser la fuente real del canal.
 
-The Simple Secure Chat example can be interacted with through the Serial Monitor in Visual Studio Code, or with a Serial USB Terminal on Android.
+## 🗺️ Mapas y visibilidad
 
-## ⚡️ MeshCore Flasher
+Este perfil está preparado para reportar a:
 
-We have prebuilt firmware ready to flash on supported devices.
+- MeshChile MQTT: `mqtt-msc.meshchile.cl`
+- LetsMesh Analyzer EU
+- MeshMapper
 
-- Launch https://meshcore.io/flasher
-- Select a supported device
-- Flash one of the firmware types:
-  - Companion, Repeater or Room Server
-- Once flashing is complete, you can connect with one of the MeshCore clients below.
+Para forzar presencia después de configurar:
 
-## 📱 MeshCore Clients
+```text
+advert
+advert flood
+```
 
-**Companion Firmware**
+La aparición en mapas depende de que el nodo tenga hora válida, WiFi/MQTT conectado, radio correcto y que algún gateway/mapa procese el advert.
 
-The companion firmware can be connected to via BLE, USB or Wi-Fi depending on the firmware type you flashed.
+Comandos útiles de diagnóstico:
+
+```text
+get wifi.status
+get mqtt.ntp
+get mqtt.ntp.diag
+get mqtt1.preset
+get mqtt2.preset
+get mqtt3.preset
+get path.hash.mode
+get tx
+get public.key
+clock
+```
+
+## 📟 Pantalla OLED
+
+El perfil Chile muestra información útil para operación en terreno:
+
+- Nombre del nodo.
+- Frecuencia y SF.
+- Ancho de banda, CR y TX dBm.
+- Tamaño de hash de ruta.
+- Estado WiFi o IP asignada.
+
+## 📱 Clientes MeshCore
+
+Para companion/client:
 
 - Web: https://app.meshcore.nz
 - Android: https://play.google.com/store/apps/details?id=com.liamcottle.meshcore.android
@@ -133,59 +179,33 @@ The companion firmware can be connected to via BLE, USB or Wi-Fi depending on th
 - NodeJS: https://github.com/liamcottle/meshcore.js
 - Python: https://github.com/fdlamotte/meshcore-cli
 
-**Repeater and Room Server Firmware**
+## 🛠 Hardware
 
-The repeater and room server firmware can be set up via USB in the web config tool.
+MeshCore soporta varios dispositivos LoRa. Este perfil está enfocado y probado para Heltec V4 con OLED.
 
-- https://config.meshcore.io
+## 🔐 Seguridad
 
-They can also be managed via LoRa in the mobile app by using the Remote Management feature.
+No subas a GitHub:
 
-## 🛠 Hardware Compatibility
+- Claves WiFi.
+- Contraseñas admin.
+- Llaves privadas MeshCore.
+- Coordenadas privadas exactas.
+- PSK de canales privados.
 
-MeshCore is designed for devices listed in the [MeshCore Flasher](https://meshcore.io/flasher)
+El firmware debe compartirse sin secretos. Cada usuario configura sus datos desde webconfig o serial después del flash.
 
-## 📜 License
+## 📚 Más documentación
 
-MeshCore is open-source software released under the MIT License. You are free to use, modify, and distribute it for personal and commercial projects.
+- Guía detallada del perfil Chile: [docs/meshchile-observer.md](./docs/meshchile-observer.md)
+- Documentación oficial MeshCore: https://docs.meshcore.io
+- Flasher oficial MeshCore: https://meshcore.io/flasher
+- Observer firmware base: https://observer.gessaman.com/
 
-## Contributing
+## 📜 Licencia
 
-Please submit PR's using 'dev' as the base branch!
-For minor changes just submit your PR and we'll try to review it, but for anything more 'impactful' please open an Issue first and start a discussion. It is better to sound out what it is you want to achieve first, and try to come to a consensus on what the best approach is, especially when it impacts the structure or architecture of this codebase.
+MeshCore es software open-source bajo licencia MIT. Puedes usarlo, modificarlo y distribuirlo para proyectos personales, comunitarios o comerciales respetando la licencia original.
 
-Here are some general principles you should try to adhere to:
-* Keep it simple. Please, don't think like a high-level lang programmer. Think embedded, and keep code concise, without any unnecessary layers.
-* No dynamic memory allocation, except during setup/begin functions.
-* Use the same brace and indenting style that's in the core source modules. (A .clang-format is probably going to be added soon, but please do NOT retroactively re-format existing code. This just creates unnecessary diffs that make finding problems harder)
+## Contribuir
 
-Help us prioritize! Please react with thumbs-up to issues/PRs you care about most. We look at reaction counts when planning work.
-
-### Running unit tests
-
-To run unit tests, run the following command:
-
-```bash
-pio test --environment native --verbose
-```
-
-## Road-Map / To-Do
-
-There are a number of fairly major features in the pipeline, with no particular time-frames attached yet. In very rough chronological order:
-- [X] Companion radio: UI redesign
-- [X] Repeater + Room Server: add ACL's (like Sensor Node has)
-- [X] Standardise Bridge mode for repeaters
-- [ ] Repeater/Bridge: Standardise the Transport Codes for zoning/filtering
-- [X] Core + Repeater: enhanced zero-hop neighbour discovery
-- [ ] Core: round-trip manual path support
-- [ ] Companion + Apps: support for multiple sub-meshes (and 'off-grid' client repeat mode)
-- [ ] Core + Apps: support for LZW message compression
-- [ ] Core: dynamic CR (Coding Rate) for weak vs strong hops
-- [ ] Core: new framework for hosting multiple virtual nodes on one physical device
-- [ ] V2 protocol spec: discussion and consensus around V2 packet protocol, including path hashes, new encryption specs, etc
-
-## 📞 Get Support
-
-- Report bugs and request features on the [GitHub Issues](https://github.com/ripplebiz/MeshCore/issues) page.
-- Find additional guides and components on [my site](https://buymeacoffee.com/ripplebiz).
-- Join [MeshCore Discord](https://meshcore.gg) to chat with the developers and get help from the community.
+Para cambios generales de MeshCore, usa `dev` como rama base. Para cambios del perfil Chile, abre un issue o PR explicando qué hardware usaste, qué mapa/MQTT probaste y qué comandos de verificación pasaron.
