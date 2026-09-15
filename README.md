@@ -67,6 +67,8 @@ set wifi.pwd <clave-wifi>
 set radio 927.875,62.5,8,5
 set tx 22
 set path.hash.mode 1
+set advert.interval 60
+set flood.advert.interval 12
 set lat <latitud>
 set lon <longitud>
 set mqtt.iata <codigo-zona>

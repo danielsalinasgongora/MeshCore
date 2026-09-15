@@ -10,7 +10,8 @@ This fork adds a public Chile observer profile for Heltec V4 devices running the
 - MQTT slot 1: `meshchile`, using `wss://mqtt-msc.meshchile.cl:443/mqtt` with JWT device authentication, audience `mqtt-msc.meshchile.cl`, and the Let's Encrypt / ISRG Root X1 certificate chain used by the broker.
 - MQTT slot 2: `analyzer-eu`.
 - MQTT slot 3: `meshmapper`.
-- MQTT status, packets, RX, and advert TX are enabled by the upstream observer defaults. Use `mqtt.tx on` when the command bot should publish its replies to MQTT-backed maps.
+- MQTT status, packets, RX, and TX are enabled for map reporting and bot replies.
+- Local adverts default to every 60 minutes and flood adverts default to every 12 hours for fresher map updates.
 - Time zone: `America/Santiago`.
 - NTP primary server: `ntp.shoa.cl`, with the upstream fallback servers still available.
 - OLED status page shows node name, radio, TX power, path hash byte size, and Wi-Fi/IP state.
@@ -51,8 +52,10 @@ set password <strong-admin-password>
 set wifi.ssid <wifi-name>
 set wifi.pwd <wifi-password>
 set radio 927.875,62.5,8,5
-set tx_power 22
+set tx 22
 set path.hash.mode 1
+set advert.interval 60
+set flood.advert.interval 12
 set mqtt.iata SCL
 set mqtt1.preset meshchile
 set mqtt2.preset analyzer-eu

@@ -34,6 +34,12 @@
 #ifndef DEFAULT_PATH_HASH_MODE
   #define DEFAULT_PATH_HASH_MODE 0
 #endif
+#ifndef DEFAULT_ADVERT_INTERVAL_MINS
+  #define DEFAULT_ADVERT_INTERVAL_MINS 2
+#endif
+#ifndef DEFAULT_FLOOD_ADVERT_INTERVAL_HOURS
+  #define DEFAULT_FLOOD_ADVERT_INTERVAL_HOURS 47
+#endif
 
 #ifndef WEBCONFIG_AUTO_LAN_RETRY_MS
   #define WEBCONFIG_AUTO_LAN_RETRY_MS 30000UL
@@ -1207,8 +1213,8 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
   _prefs.cr = LORA_CR;
   _prefs.tx_power_dbm = LORA_TX_POWER;
   _prefs.path_hash_mode = DEFAULT_PATH_HASH_MODE;
-  _prefs.advert_interval = 1;        // default to 2 minutes for NEW installs
-  _prefs.flood_advert_interval = 47; // 47 hours
+  _prefs.advert_interval = DEFAULT_ADVERT_INTERVAL_MINS / 2;
+  _prefs.flood_advert_interval = DEFAULT_FLOOD_ADVERT_INTERVAL_HOURS;
   _prefs.flood_max = 64;
   _prefs.flood_max_unscoped = 64;
   _prefs.flood_max_advert = 8;
