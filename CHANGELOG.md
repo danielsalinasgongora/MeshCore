@@ -1,3 +1,7 @@
+## Unreleased
+
+- Added a MeshChile Heltec V4 private alert-channel bot for `#ping`, `#status`, `#wifi`, and `#hora`; responses are rate-limited and only work on the configured private alert channel.
+
 ## MeshChile observer profile
 
 - Added a Heltec V4 Chile observer build target with Chile LoRa defaults, 2-byte path hashes, MeshChile/LetsMesh/MeshMapper MQTT presets, America/Santiago timezone, and `ntp.shoa.cl` as primary NTP.

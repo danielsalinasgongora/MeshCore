@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <stdlib.h>  // for qsort()
 #include <helpers/RxReservePacketManager.h>
-#if defined(WITH_WEBCONFIG) && defined(WEBCONFIG_AUTO_LAN)
+#if defined(ESP32) && ((defined(WITH_WEBCONFIG) && defined(WEBCONFIG_AUTO_LAN)) || defined(WITH_QTA_PRIVATE_BOT))
 #include <WiFi.h>
 #endif
 #if defined(WITH_MQTT_NEIGHBORS)
@@ -81,6 +81,10 @@
 #define OTA_TX_DRAIN_TIMEOUT_MS     5000
 
 #define LAZY_CONTACTS_WRITE_DELAY    5000
+
+#ifndef QTA_PRIVATE_BOT_REPLY_INTERVAL_MS
+  #define QTA_PRIVATE_BOT_REPLY_INTERVAL_MS 60000UL
+#endif
 
 void MyMesh::putNeighbour(const mesh::Identity &id, uint32_t timestamp, float snr) {
 #if MAX_NEIGHBOURS // check if neighbours enabled
@@ -542,6 +546,94 @@ void MyMesh::logRxRaw(float snr, float rssi, const uint8_t raw[], int len) {
     // Store raw radio data for MQTT messages
     if (bridge) bridge->storeRawRadioData(raw, len, snr, rssi);
   }
+#endif
+}
+
+
+
+int MyMesh::searchChannelsByHash(const uint8_t* hash, mesh::GroupChannel channels[], int max_matches) {
+#if defined(WITH_MQTT_BRIDGE) && defined(WITH_QTA_PRIVATE_BOT)
+  if (!hash || !channels || max_matches <= 0) return 0;
+  mesh::GroupChannel configured;
+  if (!_alerter.getConfiguredChannel(configured)) return 0;
+  if (configured.hash[0] != hash[0]) return 0;
+  channels[0] = configured;
+  return 1;
+#else
+  (void)hash;
+  (void)channels;
+  (void)max_matches;
+  return 0;
+#endif
+}
+
+void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type, const mesh::GroupChannel& channel, uint8_t* data, size_t len) {
+#if defined(WITH_MQTT_BRIDGE) && defined(WITH_QTA_PRIVATE_BOT)
+  if (type != PAYLOAD_TYPE_GRP_TXT || len < 5 || !_alerter.matchesConfiguredChannel(channel)) return;
+
+  uint8_t txt_type = data[4];
+  if ((txt_type >> 2) != 0) return;
+
+  char text[161];
+  size_t text_len = len - 5;
+  if (text_len >= sizeof(text)) text_len = sizeof(text) - 1;
+  memcpy(text, &data[5], text_len);
+  text[text_len] = 0;
+
+  char* command = text;
+  char* body = strstr(text, ": ");
+  if (body) command = body + 2;
+  while (*command == ' ' || *command == '\t') command++;
+
+  char cmd[16];
+  size_t i = 0;
+  while (command[i] && command[i] != ' ' && command[i] != '\t' && command[i] != '\r' && command[i] != '\n' && i + 1 < sizeof(cmd)) {
+    char c = command[i];
+    if (c >= 'A' && c <= 'Z') c = (char)(c - 'A' + 'a');
+    cmd[i] = c;
+    i++;
+  }
+  cmd[i] = 0;
+
+  if (strcmp(cmd, "#ping") != 0 && strcmp(cmd, "#status") != 0 && strcmp(cmd, "#wifi") != 0 && strcmp(cmd, "#hora") != 0) return;
+
+  unsigned long now_ms = millis();
+  if ((long)(now_ms - _qta_bot_next_reply_ms) < 0) return;
+  _qta_bot_next_reply_ms = now_ms + QTA_PRIVATE_BOT_REPLY_INTERVAL_MS;
+
+  char reply[160];
+  if (strcmp(cmd, "#ping") == 0) {
+    snprintf(reply, sizeof(reply), "pong | SNR %.2f dB | RSSI %.0f dBm | %u hops",
+             packet->getSNR(), _radio->getLastRSSI(), (unsigned)packet->getPathHashCount());
+  } else if (strcmp(cmd, "#status") == 0) {
+    snprintf(reply, sizeof(reply), "estoy aqui | %s | uptime %lumin | RX %lu | TX %lu | Hash:%u-byte",
+             _prefs.node_name, uptime_millis / 60000UL,
+             (unsigned long)radio_driver.getPacketsRecv(),
+             (unsigned long)radio_driver.getPacketsSent(),
+             (unsigned)(_prefs.path_hash_mode + 1));
+  } else if (strcmp(cmd, "#wifi") == 0) {
+#if defined(ESP32)
+    if (WiFi.status() == WL_CONNECTED) {
+      snprintf(reply, sizeof(reply), "wifi conectado | IP %s | RSSI %d dBm", WiFi.localIP().toString().c_str(), WiFi.RSSI());
+    } else {
+      snprintf(reply, sizeof(reply), "wifi desconectado");
+    }
+#else
+    snprintf(reply, sizeof(reply), "wifi no disponible en este hardware");
+#endif
+  } else {
+    uint32_t now = getRTCClock()->getCurrentTime();
+    DateTime dt = DateTime(now);
+    snprintf(reply, sizeof(reply), "hora UTC %04d-%02d-%02d %02d:%02d:%02d",
+             dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second());
+  }
+  _alerter.sendText(reply);
+#else
+  (void)packet;
+  (void)type;
+  (void)channel;
+  (void)data;
+  (void)len;
 #endif
 }
 

@@ -123,6 +123,9 @@ class MyMesh : public mesh::Mesh, public CommonCLICallbacks
   CayenneLPP telemetry;
   unsigned long set_radio_at, revert_radio_at;
   unsigned long _ota_update_at = 0;  // deferred `ota update` fire time (0 = none scheduled)
+#if defined(WITH_MQTT_BRIDGE) && defined(WITH_QTA_PRIVATE_BOT)
+  unsigned long _qta_bot_next_reply_ms = 0;
+#endif
   float pending_freq;
   float pending_bw;
   uint8_t pending_sf;
@@ -266,6 +269,8 @@ protected:
   void onPeerDataRecv(mesh::Packet* packet, uint8_t type, int sender_idx, const uint8_t* secret, uint8_t* data, size_t len) override;
   bool onPeerPathRecv(mesh::Packet* packet, int sender_idx, const uint8_t* secret, uint8_t* path, uint8_t path_len, uint8_t extra_type, uint8_t* extra, uint8_t extra_len) override;
   void onControlDataRecv(mesh::Packet* packet) override;
+  int searchChannelsByHash(const uint8_t* hash, mesh::GroupChannel channels[], int max_matches) override;
+  void onGroupDataRecv(mesh::Packet* packet, uint8_t type, const mesh::GroupChannel& channel, uint8_t* data, size_t len) override;
 
   void sendFloodReply(mesh::Packet* packet, unsigned long delay_millis, uint8_t path_hash_size);
 

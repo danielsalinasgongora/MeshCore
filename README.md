@@ -28,6 +28,7 @@ Lo que agrega este fork:
 - Panel web LAN automático: cuando el nodo conecta al WiFi, el webconfig queda disponible por la IP del nodo.
 - Terminal web integrada para ejecutar comandos CLI desde el navegador.
 - Soporte documentado para canal privado de alertas del observer.
+- Bot local opcional para responder comandos simples en el canal privado configurado.
 
 El firmware público no incluye credenciales personales. Cada operador debe configurar su WiFi, contraseña de administración, llaves MeshCore y ubicación propia después de flashear.
 
@@ -126,6 +127,30 @@ alert test
 ```
 
 No publiques la clave del canal en GitHub. Si usas `set alert.psk`, el firmware guarda la clave y puede dejar `alert.hashtag` como `(unset)`, lo cual es normal: la PSK pasa a ser la fuente real del canal.
+
+### Bot privado del observer
+
+El perfil Chile para Heltec V4 puede responder comandos breves por LoRa, pero solo en el canal privado configurado para alertas. No responde en Public ni en canales públicos conocidos, para evitar spam en la red comunitaria.
+
+Comandos disponibles:
+
+```text
+#ping
+#status
+#wifi
+#hora
+```
+
+Ejemplos de respuesta:
+
+```text
+pong | SNR -1.50 dB | RSSI -114 dBm | 2 hops
+estoy aqui | MeshChile Observer | uptime 35min | RX 120 | TX 8 | Hash:2-byte
+wifi conectado | IP 192.168.1.50 | RSSI -41 dBm
+hora UTC 2026-09-15 18:30:00
+```
+
+Las respuestas están limitadas a una por minuto para que el observer no sature LoRa. Para usarlo, configura un canal privado con `set alert.hashtag` o `set alert.psk` y luego escribe los comandos desde un companion que tenga el mismo canal.
 
 ## 🗺️ Mapas y visibilidad
 

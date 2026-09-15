@@ -75,7 +75,7 @@ The public firmware image intentionally does not include operator credentials, n
 
 The web panel includes a CLI terminal that can run the same safe node commands as the serial console, including `advert`, `get wifi.status`, `get mqtt.ntp.diag`, and `alert test`.
 
-Direct chat-style LoRa messages are companion/client behavior. The observer firmware can transmit configured alert text with `alert test` when an alert channel is configured, and it can publish its own adverts/status to MQTT/maps.
+Direct chat-style LoRa messages are companion/client behavior. The Chile observer profile also includes a private-channel bot that listens only on the configured alert channel and can answer `#ping`, `#status`, `#wifi`, and `#hora`. Public and other known shared channels remain blocked by the alert-channel guard, so the bot is intended for per-node/private channels only. The observer firmware can transmit configured alert text with `alert test` when an alert channel is configured, and it can publish its own adverts/status to MQTT/maps.
 
 ## Map visibility
 

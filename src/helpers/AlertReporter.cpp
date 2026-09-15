@@ -194,6 +194,13 @@ bool AlertReporter::sendText(const char* text) {
   return sendChannel(text);
 }
 
+bool AlertReporter::matchesConfiguredChannel(const mesh::GroupChannel& channel) const {
+  mesh::GroupChannel configured;
+  if (!resolveChannel(configured)) return false;
+  return memcmp(channel.hash, configured.hash, sizeof(configured.hash)) == 0
+      && memcmp(channel.secret, configured.secret, 16) == 0;
+}
+
 void AlertReporter::formatAge(unsigned long age_ms, char* out, size_t out_size) const {
   unsigned long secs = age_ms / 1000UL;
   unsigned long h = secs / 3600UL;

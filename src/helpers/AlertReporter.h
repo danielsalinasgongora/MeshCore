@@ -86,6 +86,12 @@ public:
    */
   bool sendText(const char* text);
 
+  /** Copy the configured private alert channel when it is valid and allowed. */
+  bool getConfiguredChannel(mesh::GroupChannel& out) const { return resolveChannel(out); }
+
+  /** True when \a channel is the configured private alert channel. */
+  bool matchesConfiguredChannel(const mesh::GroupChannel& channel) const;
+
 private:
   bool resolveChannel(mesh::GroupChannel& out) const;
   bool sendChannel(const char* text);
