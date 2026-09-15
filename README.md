@@ -1,8 +1,8 @@
 # Firmware Observer MeshCore para Chile
 
-Este fork prepara el firmware Observer MQTT de MeshCore para levantar un nodo observer/repeater en Chile, especialmente en Heltec V4. La documentación general de MeshCore, la arquitectura base y el uso avanzado del firmware original están en el repositorio upstream: [agessaman/MeshCore](https://github.com/agessaman/MeshCore).
+Este fork prepara el firmware Observer MQTT de MeshCore para levantar un nodo observer/repeater en Chile en hardware Heltec V4. La documentación general de MeshCore, la arquitectura base y el uso avanzado del firmware original están en el repositorio upstream: [agessaman/MeshCore](https://github.com/agessaman/MeshCore).
 
-Este README se enfoca solo en lo necesario para flashear, configurar y verificar un observer chileno con este firmware.
+Este README se enfoca solo en lo necesario para flashear, configurar y verificar un observer chileno con este firmware. **Nota: los binarios publicados por este fork son solo para HELTEC V4. No los uses en otro hardware.**
 
 ## Qué deja listo este firmware
 
@@ -24,7 +24,7 @@ El firmware público no incluye tus claves, WiFi, coordenadas privadas ni llaves
 
 ## Hardware recomendado
 
-Esta guía está pensada para:
+Esta guía está pensada solo para:
 
 - Heltec V4 / ESP32-S3 con LoRa.
 - Cable USB-C de datos.
@@ -287,7 +287,7 @@ git push origin chile-observer-v1.0.0
 
 GitHub Actions compilará el target `heltec_v4_repeater_observer_mqtt_chile` y creará un Release con los binarios.
 
-Para flasheo limpio por USB, descarga desde el Release el archivo que termina en:
+Para flasheo limpio por USB en HELTEC V4, descarga desde el Release el archivo que termina en:
 
 ```text
 -merged.bin

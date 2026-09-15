@@ -60,7 +60,7 @@ jobs:
           done
           cp firmware-notes.html release/firmware-notes.html
           cat > release/README-flash.txt <<'EOF'
-MeshCore Chile Observer firmware for Heltec V4.
+MeshCore Chile Observer firmware for Heltec V4 only. Do not flash this binary on other hardware.
 
 Recommended file for a clean USB flash:
 - Use the file ending in -merged.bin.
@@ -85,9 +85,9 @@ EOF
         with:
           name: Chile Observer Firmware ${{ steps.version.outputs.version }}
           body: |
-            Firmware Observer MeshCore para Chile, target Heltec V4.
+            Firmware Observer MeshCore para Chile, solo para HELTEC V4.
 
-            Para flasheo limpio por USB, descarga el archivo que termina en `-merged.bin`.
+            Para flasheo limpio por USB en HELTEC V4, descarga el archivo que termina en `-merged.bin`. No uses este binario en otro hardware.
 
             Después del flash, configura tus datos propios por serial o desde el panel web: WiFi, nombre del nodo, contraseña admin, ubicación, bot y canales privados.
           files: release/*
