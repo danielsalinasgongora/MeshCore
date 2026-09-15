@@ -1,84 +1,67 @@
-## Acerca de MeshCore
+# Firmware Observer MeshCore para Chile
 
-MeshCore es una librería C++ liviana y portable para crear redes mesh de paquetes sobre LoRa y otros radios. Permite que nodos pequeños se comuniquen a larga distancia y que otros nodos repitan los mensajes cuando no hay internet o infraestructura tradicional disponible.
+Este fork prepara el firmware Observer MQTT de MeshCore para levantar un nodo observer/repeater en Chile, especialmente en Heltec V4. La documentación general de MeshCore, la arquitectura base y el uso avanzado del firmware original están en el repositorio upstream: [agessaman/MeshCore](https://github.com/agessaman/MeshCore).
 
-## 🔍 ¿Qué es MeshCore?
+Este README se enfoca solo en lo necesario para flashear, configurar y verificar un observer chileno con este firmware.
 
-MeshCore permite crear redes descentralizadas parecidas a Meshtastic o Reticulum, pero con foco en ruteo multi-salto liviano para proyectos embebidos. Es útil para comunicaciones fuera de red, emergencias, zonas rurales, pruebas de radio, sensores e instalaciones donde se necesita resiliencia con bajo consumo.
+## Qué deja listo este firmware
 
-Este fork parte del firmware Observer de Gessaman y agrega un perfil listo para Chile, pensado para levantar nodos observadores/repetidores con Heltec V4 y reportar a mapas comunitarios.
-
-> **Firmware Observer MQTT**: la base original de Gessaman incluye webconfig, MQTT con autenticación JWT, NTP, estadísticas, SNMP y presets de mapas. Este fork mantiene esa base y suma un perfil chileno listo para compilar.
-
-## 🇨🇱 Perfil MeshChile / Chile Observer
-
-Este fork incluye un perfil público para nodos MeshCore en Chile. Está pensado para que cualquier persona pueda levantar un observer/repeater sin tener que repetir toda la configuración manual de radio, MQTT, mapas y reloj.
-
-Lo que agrega este fork:
-
-- Preset MQTT `meshchile` para `wss://mqtt-msc.meshchile.cl:443/mqtt`, con autenticación JWT por identidad del dispositivo y audience `mqtt-msc.meshchile.cl`.
-- Target PlatformIO `heltec_v4_repeater_observer_mqtt_chile` para Heltec V4.
-- Radio Chile por defecto: `927.875 MHz`, `62.5 kHz`, `SF8`, `CR5`.
-- Potencia TX por defecto: `22 dBm`.
-- `path.hash.mode = 1`, que en MeshCore equivale a hashes de ruta de 2 bytes.
-- Reporte MQTT por defecto hacia MeshChile, LetsMesh Analyzer EU y MeshMapper.
+- Radio Chile: `927.875 MHz`, `62.5 kHz`, `SF8`, `CR5`.
+- Potencia TX: `22 dBm`.
+- `path.hash.mode 1`, que en MeshCore equivale a advert/path hash de 2 bytes.
+- MQTT preconfigurado para:
+  - MeshChile: `mqtt-msc.meshchile.cl`.
+  - LetsMesh Analyzer EU.
+  - MeshMapper.
+- Certificado correcto para el broker actual de MeshChile, usando Let’s Encrypt / ISRG Root X1.
 - Zona horaria `America/Santiago`.
 - NTP primario `ntp.shoa.cl`.
-- Pantalla OLED mejorada con nombre del nodo, radio, potencia TX, tamaño de hash e IP/WiFi.
-- Panel web LAN automático: cuando el nodo conecta al WiFi, el webconfig queda disponible por la IP del nodo.
-- Terminal web integrada para ejecutar comandos CLI desde el navegador.
-- Soporte documentado para canal privado de alertas del observer.
-- Bot local opcional para responder comandos simples en el canal privado configurado.
+- Panel web automático cuando el nodo conecta a WiFi.
+- Pantalla OLED con estado útil del nodo: nombre, radio, TX, hash e IP/WiFi.
+- Bot opcional para responder `#ping`, `#status`, `#wifi` y `#hora` en Public o en un canal privado.
 
-El firmware público no incluye credenciales personales. Cada operador debe configurar su WiFi, contraseña de administración, llaves MeshCore y ubicación propia después de flashear.
+El firmware público no incluye tus claves, WiFi, coordenadas privadas ni llaves de canales. Cada operador debe configurar esos datos después del flash.
 
-## ⚙️ Compilar
+## Hardware recomendado
 
-Instala PlatformIO y compila el perfil Chile:
+Esta guía está pensada para:
+
+- Heltec V4 / ESP32-S3 con LoRa.
+- Cable USB-C de datos.
+- WiFi con salida a internet.
+- Antena adecuada para la banda usada por MeshCore Chile.
+
+## Opción rápida: flashear con PlatformIO
+
+Instala PlatformIO y conecta el Heltec V4 por USB.
+
+Compila el firmware:
 
 ```bash
 pio run -e heltec_v4_repeater_observer_mqtt_chile
 ```
 
-## 🔌 Flashear un Heltec V4
-
-Conecta el Heltec V4 por USB y ejecuta:
+Flashea el equipo:
 
 ```bash
 pio run -e heltec_v4_repeater_observer_mqtt_chile -t upload
 ```
 
-Si necesitas indicar puerto manualmente:
+Si necesitas indicar el puerto manualmente en Windows:
 
 ```bash
 pio run -e heltec_v4_repeater_observer_mqtt_chile -t upload --upload-port COM3
 ```
 
-## 🌐 Panel web
+Después del flash, abre una consola serial a `115200` baudios.
 
-En el perfil Chile, el panel web se levanta automáticamente cuando el nodo está conectado al WiFi. En la pantalla OLED deberías ver la IP del nodo.
+## Configuración inicial paso a paso
 
-También puedes iniciarlo manualmente por serial:
-
-```text
-start webconfig
-```
-
-Para levantar un AP de configuración:
-
-```text
-start webconfig ap
-```
-
-El panel usa la contraseña de administración del nodo. Cámbiala siempre en cada instalación.
-
-## 🧭 Configuración rápida por serial
-
-Plantilla segura para un nodo observer/repeater chileno:
+Con el nodo recién flasheado, configura estos valores por serial. Cambia los campos entre `<...>` por tus datos.
 
 ```text
 set name <nombre-del-nodo>
-password <clave-admin-segura>
+set password <clave-admin-segura>
 set wifi.ssid <nombre-wifi>
 set wifi.pwd <clave-wifi>
 set radio 927.875,62.5,8,5
@@ -86,7 +69,7 @@ set tx 22
 set path.hash.mode 1
 set lat <latitud>
 set lon <longitud>
-set mqtt.iata SCL
+set mqtt.iata <codigo-zona>
 set mqtt1.preset meshchile
 set mqtt2.preset analyzer-eu
 set mqtt2.filter all
@@ -94,45 +77,96 @@ set mqtt3.preset meshmapper
 set mqtt.rx on
 set mqtt.packets on
 set mqtt.status on
-set mqtt.tx advert
+set mqtt.tx on
 set mqtt.ntp ntp.shoa.cl
 set timezone America/Santiago
-advert
+reboot
 ```
 
-Notas:
+Notas rápidas:
 
+- Usa `SCL`, `VAP` u otro código acordado por tu zona/comunidad en `mqtt.iata`.
 - `path.hash.mode 1` significa 2-byte en MeshCore.
-- Usa `SCL`, `VAP` u otro código según la zona/comunidad donde quieras reportar.
+- `mqtt.tx on` permite que los mensajes generados por el nodo, como respuestas del bot, también suban a mapas MQTT. Si queda en `advert`, solo suben los adverts propios.
 - No publiques coordenadas exactas si el nodo está en una ubicación privada.
 
-## 🚨 Canal de alertas del observer
+## Configurar desde el panel web
 
-El firmware Observer puede enviar alertas LoRa por un canal configurado. Esto sirve para que el nodo mande avisos o pruebas desde la terminal web o serial.
+Cuando el WiFi conecta, el panel web se levanta automáticamente en la IP del nodo. La OLED debería mostrar esa IP.
 
-Configura un canal privado así:
-
-```text
-set alert.hashtag <#canal-privado>
-set alert on
-alert test
-```
-
-Si tienes una clave de canal explícita de 16 bytes en hexadecimal, úsala así:
+También puedes iniciarlo manualmente por serial:
 
 ```text
-set alert.psk <clave-hex-de-32-caracteres>
-set alert on
-alert test
+start webconfig
 ```
 
-No publiques la clave del canal en GitHub. Si usas `set alert.psk`, el firmware guarda la clave y puede dejar `alert.hashtag` como `(unset)`, lo cual es normal: la PSK pasa a ser la fuente real del canal.
+O forzar un punto de acceso de configuración:
 
-### Bot de comandos del observer
+```text
+start webconfig ap
+```
 
-El perfil Chile para Heltec V4 puede responder comandos breves por LoRa. Por defecto queda apagado. Desde la web puedes elegir si el bot pertenece al canal Public o a un canal privado propio configurado por hashtag o PSK.
+Entra desde el navegador con la contraseña admin del nodo. Desde la web puedes ajustar WiFi, radio, ubicación, MQTT, bot y otros parámetros sin repetir todo por serial.
 
-Comandos disponibles:
+## Activar presencia en mapas
+
+Después de configurar y reiniciar, fuerza un advert:
+
+```text
+advert
+advert flood
+```
+
+El nodo debería reportar a:
+
+- [Mapa MeshChile](https://mapa-msc.meshchile.cl/#nodos)
+- [Mensajes MeshChile](https://mapa-msc.meshchile.cl/#mensajes)
+- [LetsMesh Analyzer](https://analyzer.letsmesh.net/)
+- [MeshMapper](https://vap.meshmapper.net/)
+
+La aparición puede tardar unos minutos según el mapa, los filtros activos y el último advert recibido.
+
+## Verificar que todo quedó funcionando
+
+Estos comandos son los más útiles después del reboot:
+
+```text
+get wifi.status
+get mqtt.status
+get mqtt.tx
+get mqtt.ntp
+get mqtt.ntp.diag
+get path.hash.mode
+get tx
+get public.key
+clock
+```
+
+Estado esperado para MQTT:
+
+```text
+msgs: on, 1: meshchile (ok), 2: analyzer-eu (ok), 3: meshmapper (ok), q:0
+```
+
+Estado recomendado para que los mensajes del bot aparezcan en mapas:
+
+```text
+get mqtt.tx
+> on
+```
+
+## Bot de comandos LoRa
+
+El bot viene apagado por defecto. Se puede activar desde el panel web en la sección MQTT → LoRa command bot, o por serial.
+
+Para responder en el canal Public:
+
+```text
+set bot on
+set bot.channel public
+```
+
+Comandos disponibles desde el canal elegido:
 
 ```text
 #ping
@@ -145,92 +179,121 @@ Ejemplos de respuesta:
 
 ```text
 pong | SNR -1.50 dB | RSSI -114 dBm | 2 hops
-estoy aqui | MeshChile Observer | uptime 35min | RX 120 | TX 8 | Hash:2-byte
+estoy aqui | QTA_OBSERVER | uptime 35min | RX 120 | TX 8 | Hash:2-byte
 wifi conectado | IP 192.168.1.50 | RSSI -41 dBm
 hora UTC 2026-09-15 18:30:00
 ```
 
-Las respuestas están limitadas a una por minuto para que el observer no sature LoRa. Puedes habilitarlo desde el panel web en MQTT → LoRa command bot. Por CLI: `set bot on`, `set bot.channel public` para Public, o `set bot.channel private` más `set bot.hashtag <#canal>` / `set bot.psk <clave-hex>` para un canal privado. La PSK del bot se enmascara en la web.
+El bot responde como máximo una vez por minuto para no saturar LoRa. Si mandas varios comandos seguidos, espera 60 segundos entre pruebas.
 
-## 🗺️ Mapas y visibilidad
-
-Este perfil está preparado para reportar a:
-
-- MeshChile MQTT: `mqtt-msc.meshchile.cl`
-- LetsMesh Analyzer EU
-- MeshMapper
-
-Para forzar presencia después de configurar:
+Para usar un canal privado del bot:
 
 ```text
-advert
-advert flood
+set bot on
+set bot.channel private
+set bot.hashtag <#canal-privado>
 ```
 
-La aparición en mapas depende de que el nodo tenga hora válida, WiFi/MQTT conectado, radio correcto y que algún gateway/mapa procese el advert.
-
-Comandos útiles de diagnóstico:
+O con una PSK explícita de 16 bytes en hexadecimal:
 
 ```text
-get wifi.status
-get mqtt.ntp
-get mqtt.ntp.diag
-get mqtt1.preset
-get mqtt2.preset
-get mqtt3.preset
-get path.hash.mode
-get tx
-get public.key
-clock
+set bot on
+set bot.channel private
+set bot.psk <clave-hex-de-32-caracteres>
 ```
 
-## 📟 Pantalla OLED
+No publiques PSK privadas ni nombres de canales privados si identifican tu instalación local.
 
-El perfil Chile muestra información útil para operación en terreno:
+## Canal de alertas del observer
 
-- Nombre del nodo.
-- Frecuencia y SF.
-- Ancho de banda, CR y TX dBm.
-- Tamaño de hash de ruta.
-- Estado WiFi o IP asignada.
+El canal de alertas es independiente del bot. Sirve para que el observer envíe avisos operativos o pruebas.
 
-## 📱 Clientes MeshCore
+Configura un canal privado con hashtag:
 
-Para companion/client:
+```text
+set alert.hashtag <#canal-privado>
+set alert on
+alert test
+```
 
-- Web: https://app.meshcore.nz
-- Android: https://play.google.com/store/apps/details?id=com.liamcottle.meshcore.android
-- iOS: https://apps.apple.com/us/app/meshcore/id6742354151?platform=iphone
-- NodeJS: https://github.com/liamcottle/meshcore.js
-- Python: https://github.com/fdlamotte/meshcore-cli
+O con PSK explícita:
 
-## 🛠 Hardware
+```text
+set alert.psk <clave-hex-de-32-caracteres>
+set alert on
+alert test
+```
 
-MeshCore soporta varios dispositivos LoRa. Este perfil está enfocado y probado para Heltec V4 con OLED.
+Por seguridad, el firmware rechaza Public como canal de alertas para evitar spam accidental. Public sí puede usarse para el bot si lo habilitas explícitamente.
 
-## 🔐 Seguridad
+## Diagnóstico rápido
 
-No subas a GitHub:
+Si no apareces en MeshChile:
+
+1. Revisa WiFi:
+
+   ```text
+   get wifi.status
+   ```
+
+2. Revisa MQTT:
+
+   ```text
+   get mqtt.status
+   ```
+
+   MeshChile debe salir como `ok`.
+
+3. Revisa hora/NTP:
+
+   ```text
+   get mqtt.ntp.diag
+   clock
+   ```
+
+4. Revisa radio y hash:
+
+   ```text
+   get radio
+   get path.hash.mode
+   ```
+
+5. Fuerza advert:
+
+   ```text
+   advert
+   advert flood
+   ```
+
+Si el bot responde por LoRa pero no ves la respuesta en el mapa de mensajes, revisa:
+
+```text
+get mqtt.tx
+```
+
+Debe estar en `on`.
+
+## Seguridad antes de publicar cambios
+
+No subas al repositorio:
 
 - Claves WiFi.
 - Contraseñas admin.
 - Llaves privadas MeshCore.
-- Coordenadas privadas exactas.
+- Coordenadas exactas de una casa o sitio sensible.
 - PSK de canales privados.
+- Nombres de canales privados que identifiquen una instalación local.
 
-El firmware debe compartirse sin secretos. Cada usuario configura sus datos desde webconfig o serial después del flash.
+Este fork debe servir a la comunidad como firmware base para observers en Chile, dejando los datos privados para configuración local por web o serial.
 
-## 📚 Más documentación
+## Documentación adicional
 
-- Guía detallada del perfil Chile: [docs/meshchile-observer.md](./docs/meshchile-observer.md)
-- Documentación oficial MeshCore: https://docs.meshcore.io
-- Flasher oficial MeshCore: https://meshcore.io/flasher
-- Observer firmware base: https://observer.gessaman.com/
+- Firmware base original: [agessaman/MeshCore](https://github.com/agessaman/MeshCore)
+- Guía específica del perfil Chile: [docs/meshchile-observer.md](./docs/meshchile-observer.md)
+- Documentación MeshCore: [docs.meshcore.io](https://docs.meshcore.io)
+- Flasher oficial MeshCore: [meshcore.io/flasher](https://meshcore.io/flasher)
+- MeshChile: [meshchile.cl](https://meshchile.cl/)
 
-## 📜 Licencia
+## Licencia
 
-MeshCore es software open-source bajo licencia MIT. Puedes usarlo, modificarlo y distribuirlo para proyectos personales, comunitarios o comerciales respetando la licencia original.
-
-## Contribuir
-
-Para cambios generales de MeshCore, usa `dev` como rama base. Para cambios del perfil Chile, abre un issue o PR explicando qué hardware usaste, qué mapa/MQTT probaste y qué comandos de verificación pasaron.
+Este fork mantiene la licencia MIT del proyecto MeshCore original. Revisa el repositorio upstream para los detalles completos de licencia y atribución.
