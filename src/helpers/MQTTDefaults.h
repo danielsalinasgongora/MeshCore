@@ -46,6 +46,10 @@
 #define MQTT_DEFAULT_TIMEZONE_OFFSET 0
 #endif
 
+#ifndef MQTT_DEFAULT_NTP_SERVER
+#define MQTT_DEFAULT_NTP_SERVER ""
+#endif
+
 static inline void mqttDefaultSlotPreset(char* dest, size_t dest_size, const char* preset) {
   const char* resolved = MQTT_PRESET_NONE;
   if (preset && preset[0] != '\0') {
@@ -97,6 +101,11 @@ static inline void applyMQTTDefaults(MQTTPrefs* prefs) {
     prefs->timezone_string[sizeof(prefs->timezone_string) - 1] = '\0';
   }
   prefs->timezone_offset = MQTT_DEFAULT_TIMEZONE_OFFSET;
+
+  if (MQTT_DEFAULT_NTP_SERVER[0] != '\0') {
+    strncpy(prefs->mqtt_ntp_server, MQTT_DEFAULT_NTP_SERVER, sizeof(prefs->mqtt_ntp_server) - 1);
+    prefs->mqtt_ntp_server[sizeof(prefs->mqtt_ntp_server) - 1] = '\0';
+  }
 
   // Observer non-MQTT defaults (moved out of NodePrefs/MyMesh ctor in Phase 2).
   strncpy(prefs->snmp_community, "public", sizeof(prefs->snmp_community) - 1);

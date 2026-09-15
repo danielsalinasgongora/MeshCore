@@ -147,17 +147,24 @@ void UITask::renderCurrScreen() {
 
     // bw / cr
     _display->setCursor(0, 30);
-    sprintf(tmp, "BW: %03.2f CR: %d", _node_prefs->bw, _node_prefs->cr);
+    sprintf(tmp, "BW:%03.2f CR:%d TX:%ddBm", _node_prefs->bw, _node_prefs->cr, _node_prefs->tx_power_dbm);
     _display->print(tmp);
 
 #ifdef WITH_MQTT_BRIDGE
-    // Display IP address for MQTT bridge devices
+    _display->setCursor(0, 40);
+    _display->setColor(UIColor::primary_txt);
+    snprintf(tmp, sizeof(tmp), "Hash:%u-byte", (unsigned)(_node_prefs->path_hash_mode + 1));
+    _display->print(tmp);
+
     if (WiFi.status() == WL_CONNECTED) {
       IPAddress ip = WiFi.localIP();
-      _display->setCursor(0, 40);
-      _display->setColor(UIColor::primary_txt);
-      snprintf(tmp, sizeof(tmp), "IP: %d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
+      _display->setCursor(0, 50);
+      snprintf(tmp, sizeof(tmp), "IP:%d.%d.%d.%d", ip[0], ip[1], ip[2], ip[3]);
       _display->print(tmp);
+    } else {
+      _display->setCursor(0, 50);
+      _display->setColor(UIColor::warning_txt);
+      _display->print("WiFi offline");
     }
 #endif
   }

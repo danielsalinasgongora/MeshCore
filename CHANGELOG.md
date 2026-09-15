@@ -1,3 +1,11 @@
+## MeshChile observer profile
+
+- Added a Heltec V4 Chile observer build target with Chile LoRa defaults, 2-byte path hashes, MeshChile/LetsMesh/MeshMapper MQTT presets, America/Santiago timezone, and `ntp.shoa.cl` as primary NTP.
+- Added a public `meshchile` MQTT preset using JWT device authentication.
+- Updated the OLED observer status page to show TX power, path hash byte size, and Wi-Fi/IP state.
+- The Chile observer build now auto-starts the LAN webconfig portal after Wi-Fi connects.
+- Documented safe per-node setup without committing Wi-Fi credentials, private keys, admin passwords, or precise private coordinates.
+
 # MeshCore Observer — Changelog
 
 Changes to the MQTT observer / bridge work that powers the firmware offered on

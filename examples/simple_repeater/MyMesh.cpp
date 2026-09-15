@@ -2,6 +2,9 @@
 #include <algorithm>
 #include <stdlib.h>  // for qsort()
 #include <helpers/RxReservePacketManager.h>
+#if defined(WITH_WEBCONFIG) && defined(WEBCONFIG_AUTO_LAN)
+#include <WiFi.h>
+#endif
 #if defined(WITH_MQTT_NEIGHBORS)
 #include <helpers/MQTTConnectionPolicy.h>  // kSyncedClockEpoch
 #endif
@@ -26,6 +29,14 @@
 
 #ifndef ADVERT_NAME
   #define ADVERT_NAME "repeater"
+#endif
+
+#ifndef DEFAULT_PATH_HASH_MODE
+  #define DEFAULT_PATH_HASH_MODE 0
+#endif
+
+#ifndef WEBCONFIG_AUTO_LAN_RETRY_MS
+  #define WEBCONFIG_AUTO_LAN_RETRY_MS 30000UL
 #endif
 #ifndef ADVERT_LAT
   #define ADVERT_LAT 0.0
@@ -1038,6 +1049,7 @@ MyMesh::MyMesh(mesh::MainBoard &board, mesh::Radio &radio, mesh::MillisecondCloc
   _prefs.bw = LORA_BW;
   _prefs.cr = LORA_CR;
   _prefs.tx_power_dbm = LORA_TX_POWER;
+  _prefs.path_hash_mode = DEFAULT_PATH_HASH_MODE;
   _prefs.advert_interval = 1;        // default to 2 minutes for NEW installs
   _prefs.flood_advert_interval = 47; // 47 hours
   _prefs.flood_max = 64;
@@ -1761,6 +1773,17 @@ void MyMesh::loop() {
       _webconfig = NULL;
     }
   }
+#if defined(WEBCONFIG_AUTO_LAN)
+  static uint32_t next_webconfig_auto_lan = 0;
+  const uint32_t webconfig_now = millis();
+  if (!_webconfig && _cli.getObserverPrefs()->wifi_ssid[0] != 0 && WiFi.status() == WL_CONNECTED &&
+      (next_webconfig_auto_lan == 0 || millisHasNowPassed(next_webconfig_auto_lan))) {
+    char wc_reply[160];
+    startWebConfig(false, wc_reply);
+    Serial.println(wc_reply);
+    next_webconfig_auto_lan = webconfig_now + WEBCONFIG_AUTO_LAN_RETRY_MS;
+  }
+#endif
 #endif
 
   // is pending dirty contacts write needed?
