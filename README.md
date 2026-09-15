@@ -12,6 +12,64 @@ MeshCore provides the ability to create wireless mesh networks, similar to Mesht
 > [MQTT Implementation Guide](./MQTT_IMPLEMENTATION.md) for configuration, CLI commands, and
 > troubleshooting.
 
+## 🇨🇱 MeshChile / Chile Observer profile
+
+This fork includes a ready-to-build observer profile for Chilean MeshCore nodes, focused on Heltec V4 hardware and community map reporting. It keeps operator secrets out of the firmware image: Wi-Fi credentials, admin passwords, private keys, and exact private coordinates must be configured per node after flashing.
+
+What this fork adds:
+
+- A `meshchile` MQTT preset for `wss://mqtt-msc.meshchile.cl:443/mqtt`, using JWT device authentication and audience `mqtt-msc.meshchile.cl`.
+- A Heltec V4 build target named `heltec_v4_repeater_observer_mqtt_chile`.
+- Chile LoRa defaults: `927.875 MHz`, `62.5 kHz`, `SF8`, `CR5`.
+- TX power default set to `22 dBm`.
+- Default path hash mode set to `1`, which MeshCore uses as 2-byte path hashes.
+- MQTT map/reporting defaults for MeshChile, LetsMesh analyzer EU, and MeshMapper.
+- Timezone default `America/Santiago` and primary NTP server `ntp.shoa.cl`.
+- OLED status improvements showing node name, radio settings, TX power, path hash byte size, and Wi-Fi/IP status.
+- LAN webconfig auto-start for the Chile observer build, so the web panel is available after Wi-Fi connects.
+
+Build it with PlatformIO:
+
+```bash
+pio run -e heltec_v4_repeater_observer_mqtt_chile
+```
+
+Flash a Heltec V4 over USB serial:
+
+```bash
+pio run -e heltec_v4_repeater_observer_mqtt_chile -t upload
+```
+
+After flashing, configure each operator-specific value from the web panel or serial console. The web panel starts automatically once Wi-Fi is connected; it can also be started manually with `start webconfig`, or as a setup AP with `start webconfig ap`.
+
+Safe serial fallback template:
+
+```text
+set name <node-name>
+password <strong-admin-password>
+set wifi.ssid <wifi-name>
+set wifi.pwd <wifi-password>
+set radio 927.875,62.5,8,5
+set tx 22
+set path.hash.mode 1
+set lat <latitude>
+set lon <longitude>
+set mqtt.iata SCL
+set mqtt1.preset meshchile
+set mqtt2.preset analyzer-eu
+set mqtt2.filter all
+set mqtt3.preset meshmapper
+set mqtt.rx on
+set mqtt.packets on
+set mqtt.status on
+set mqtt.tx advert
+set mqtt.ntp ntp.shoa.cl
+set timezone America/Santiago
+advert
+```
+
+For more detail, see [docs/meshchile-observer.md](./docs/meshchile-observer.md).
+
 ## ⚡ Key Features
 
 * Multi-Hop Packet Routing
