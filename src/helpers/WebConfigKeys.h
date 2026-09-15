@@ -27,6 +27,7 @@ static const char* const WC_ALLOWED_SET_KEYS[] = {
   "mqtt.tx", "mqtt.rx", "mqtt.interval", "mqtt.neighbors", "mqtt.neighbors.interval",
   "mqtt.ntp", "mqtt.owner", "mqtt.email",
   "timezone", "timezone.offset", "snmp", "snmp.community",
+  "bot", "bot.channel", "bot.psk", "bot.hashtag",
 };
 static const char* const WC_ALLOWED_SLOT_KEYS[] = {
   "preset", "server", "port", "username", "password", "token", "topic", "audience",
@@ -77,6 +78,7 @@ static inline bool wcIsValidAdminPassword(const char* value) {
 // the UI; a POST echoing the placeholder for one of these is dropped (unchanged).
 static inline bool wcIsSecretKey(const char* key) {
   if (strcmp(key, "wifi.pwd") == 0) return true;
+  if (strcmp(key, "bot.psk") == 0) return true;
   if (wcIsSlotKeyPrefix(key)
       && (strcmp(&key[6], "password") == 0 || strcmp(&key[6], "token") == 0)) return true;
   return false;
@@ -100,6 +102,7 @@ static inline bool wcIsSecretReadCommand(const char* cmd) {
   if (strcmp(key, "prv.key") == 0) return true;         // this node's identity
   if (strcmp(key, "guest.password") == 0) return true;
   if (strcmp(key, "alert.psk") == 0) return true;
+  if (strcmp(key, "bot.psk") == 0) return true;
   if (strcmp(key, "bridge.secret") == 0) return true;
   return wcIsSecretKey(key);   // wifi.pwd, mqttN.password, mqttN.token
 }

@@ -16,6 +16,10 @@ TEST(WebConfigKeys, AllowsKnownScalarKeys) {
   EXPECT_TRUE(wcIsAllowedSetKey("mqtt.neighbors.interval"));
   EXPECT_TRUE(wcIsAllowedSetKey("snmp.community"));
   EXPECT_TRUE(wcIsAllowedSetKey("timezone.offset"));
+  EXPECT_TRUE(wcIsAllowedSetKey("bot"));
+  EXPECT_TRUE(wcIsAllowedSetKey("bot.channel"));
+  EXPECT_TRUE(wcIsAllowedSetKey("bot.hashtag"));
+  EXPECT_TRUE(wcIsAllowedSetKey("bot.psk"));
 }
 
 TEST(WebConfigKeys, AllowsPerSlotKeys) {
@@ -105,13 +109,17 @@ TEST(WebConfigKeys, NonSecretKeysNotFlagged) {
   EXPECT_FALSE(wcIsSecretKey("mqtt1.server"));
   EXPECT_FALSE(wcIsSecretKey("mqtt1.filter"));
   EXPECT_FALSE(wcIsSecretKey("mqtt.origin"));
+  EXPECT_FALSE(wcIsSecretKey("bot"));
+  EXPECT_FALSE(wcIsSecretKey("bot.channel"));
+  EXPECT_FALSE(wcIsSecretKey("bot.hashtag"));
+  EXPECT_TRUE(wcIsSecretKey("bot.psk"));
   EXPECT_FALSE(wcIsSecretKey("name"));
   EXPECT_FALSE(wcIsSecretKey(""));
 }
 
 TEST(WebConfigKeys, EverySecretKeyIsAlsoAllowed) {
   // A secret key must be one the portal can actually set, or the masking is moot.
-  const char* secrets[] = {"wifi.pwd", "mqtt1.password", "mqtt1.token",
+  const char* secrets[] = {"wifi.pwd", "bot.psk", "mqtt1.password", "mqtt1.token",
                            "mqtt6.password", "mqtt6.token"};
   for (const char* k : secrets) {
     EXPECT_TRUE(wcIsSecretKey(k)) << k;
@@ -130,6 +138,7 @@ TEST(WebConfigKeys, MasksEverySecretReadTheCliCanReach) {
     "get wifi.pwd",          // grants the operator's LAN, not just the node
     "get guest.password",
     "get alert.psk",
+    "get bot.psk",
     "get bridge.secret",
     "get mqtt1.password", "get mqtt1.token",
     "get mqtt6.password", "get mqtt6.token",

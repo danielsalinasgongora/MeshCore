@@ -2,7 +2,7 @@
 #include <algorithm>
 #include <stdlib.h>  // for qsort()
 #include <helpers/RxReservePacketManager.h>
-#if defined(ESP32) && ((defined(WITH_WEBCONFIG) && defined(WEBCONFIG_AUTO_LAN)) || defined(WITH_QTA_PRIVATE_BOT))
+#if defined(ESP32) && ((defined(WITH_WEBCONFIG) && defined(WEBCONFIG_AUTO_LAN)) || defined(WITH_MQTT_BRIDGE))
 #include <WiFi.h>
 #endif
 #if defined(WITH_MQTT_NEIGHBORS)
@@ -551,12 +551,30 @@ void MyMesh::logRxRaw(float snr, float rssi, const uint8_t raw[], int len) {
 
 
 
+
+static bool qtaPublicBotChannel(mesh::GroupChannel& out) {
+  memset(&out, 0, sizeof(out));
+  if (!mesh::Utils::fromHex(out.secret, 16, "8b3387e9c5cdea6ac9e5edbaa115cd72")) return false;
+  mesh::Utils::sha256(out.hash, sizeof(out.hash), out.secret, 16);
+  return true;
+}
+
+static bool qtaBotConfiguredChannel(const MQTTPrefs* obs, mesh::GroupChannel& out) {
+  if (!obs) return false;
+  if (obs->bot_public_enabled) return qtaPublicBotChannel(out);
+  if (strlen(obs->bot_psk_hex) != 32) return false;
+  memset(&out, 0, sizeof(out));
+  if (!mesh::Utils::fromHex(out.secret, 16, obs->bot_psk_hex)) return false;
+  mesh::Utils::sha256(out.hash, sizeof(out.hash), out.secret, 16);
+  return true;
+}
+
 int MyMesh::searchChannelsByHash(const uint8_t* hash, mesh::GroupChannel channels[], int max_matches) {
-#if defined(WITH_MQTT_BRIDGE) && defined(WITH_QTA_PRIVATE_BOT)
-  if (!hash || !channels || max_matches <= 0) return 0;
+#ifdef WITH_MQTT_BRIDGE
+  MQTTPrefs* obs = _cli.getObserverPrefs();
+  if (!hash || !channels || max_matches <= 0 || !obs->bot_enabled) return 0;
   mesh::GroupChannel configured;
-  if (!_alerter.getConfiguredChannel(configured)) return 0;
-  if (configured.hash[0] != hash[0]) return 0;
+  if (!qtaBotConfiguredChannel(obs, configured) || configured.hash[0] != hash[0]) return 0;
   channels[0] = configured;
   return 1;
 #else
@@ -567,9 +585,55 @@ int MyMesh::searchChannelsByHash(const uint8_t* hash, mesh::GroupChannel channel
 #endif
 }
 
+bool MyMesh::isBotPublicChannel(const mesh::GroupChannel& channel) const {
+#ifdef WITH_MQTT_BRIDGE
+  mesh::GroupChannel public_channel;
+  return qtaPublicBotChannel(public_channel)
+      && memcmp(channel.hash, public_channel.hash, sizeof(public_channel.hash)) == 0
+      && memcmp(channel.secret, public_channel.secret, 16) == 0;
+#else
+  (void)channel;
+  return false;
+#endif
+}
+
+bool MyMesh::sendBotReply(mesh::GroupChannel& channel, const char* text) {
+#ifdef WITH_MQTT_BRIDGE
+  if (!text || !*text) return false;
+  uint8_t buf[5 + 160 + 32];
+  uint32_t timestamp = getRTCClock()->getCurrentTime();
+  memcpy(buf, &timestamp, 4);
+  buf[4] = 0;
+  const char* sender = _prefs.node_name[0] ? _prefs.node_name : "node";
+  int n = snprintf((char*)&buf[5], 160, "%s: %s", sender, text);
+  if (n < 0) return false;
+  if (n >= 160) n = 159;
+  mesh::Packet* pkt = createGroupDatagram(PAYLOAD_TYPE_GRP_TXT, channel, buf, 5 + (size_t)n);
+  if (!pkt) return false;
+  const uint8_t path_hash_size = (uint8_t)(_prefs.path_hash_mode + 1);
+  TransportKey scope;
+  if (resolveAlertScope(scope) && !scope.isNull()) {
+    uint16_t codes[2];
+    codes[0] = scope.calcTransportCode(pkt);
+    codes[1] = 0;
+    sendFlood(pkt, codes, 0, path_hash_size);
+  } else {
+    sendFlood(pkt, 0, path_hash_size);
+  }
+  return true;
+#else
+  (void)channel;
+  (void)text;
+  return false;
+#endif
+}
+
 void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type, const mesh::GroupChannel& channel, uint8_t* data, size_t len) {
-#if defined(WITH_MQTT_BRIDGE) && defined(WITH_QTA_PRIVATE_BOT)
-  if (type != PAYLOAD_TYPE_GRP_TXT || len < 5 || !_alerter.matchesConfiguredChannel(channel)) return;
+#ifdef WITH_MQTT_BRIDGE
+  MQTTPrefs* obs = _cli.getObserverPrefs();
+  mesh::GroupChannel configured;
+  if (!obs->bot_enabled || type != PAYLOAD_TYPE_GRP_TXT || len < 5 || !qtaBotConfiguredChannel(obs, configured)) return;
+  if (memcmp(channel.hash, configured.hash, sizeof(configured.hash)) != 0 || memcmp(channel.secret, configured.secret, 16) != 0) return;
 
   uint8_t txt_type = data[4];
   if ((txt_type >> 2) != 0) return;
@@ -627,7 +691,8 @@ void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type, const mesh::Gro
     snprintf(reply, sizeof(reply), "hora UTC %04d-%02d-%02d %02d:%02d:%02d",
              dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second());
   }
-  _alerter.sendText(reply);
+  mesh::GroupChannel reply_channel = channel;
+  sendBotReply(reply_channel, reply);
 #else
   (void)packet;
   (void)type;

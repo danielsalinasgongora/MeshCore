@@ -122,6 +122,12 @@ struct MQTTPrefs {
   // for both packets and raw MQTT topics. Appended so older v1 payloads load
   // with the default all-types masks intact.
   uint16_t mqtt_slot_packet_filter[MQTT_PREFS_SLOT_COUNT];
+
+  // Local LoRa command bot. Appended so older v1 payloads load with bot off.
+  uint8_t bot_enabled;
+  uint8_t bot_public_enabled;
+  char bot_psk_hex[33];
+  char bot_hashtag[24];
 };
 
 // Neighbor discovery is scheduled with the wrap-safe millis() helpers, whose
@@ -146,7 +152,9 @@ static const uint32_t MQTT_NEIGHBORS_DEFAULT_INTERVAL_MS = MQTT_NEIGHBORS_DEFAUL
 //   - PRE_OBSERVER  (2736): stops before the observer tail (snmp_*/alert_*).
 //   - PRE_NEIGHBORS (2860): full observer tail, no neighbors fields yet.
 //   - PRE_FILTER    (2864): neighbors tail, no per-slot packet filters.
-//   - FULL          (2876): current baseline, with six uint16_t filter masks.
+//   - PRE_BOT       (2876): packet filters, no bot fields yet.
+//   - PRE_BOT_CHAN  (2878): bot flags, no dedicated bot channel yet.
+//   - FULL          (2936): current baseline, with dedicated bot channel fields.
 //
 // FULL is the maximum written, not the default: MQTTPrefsCodec::payloadLenFor()
 // keeps emitting PRE_FILTER while every slot holds the all-types default, so a
@@ -155,7 +163,9 @@ static const uint32_t MQTT_NEIGHBORS_DEFAULT_INTERVAL_MS = MQTT_NEIGHBORS_DEFAUL
 static const size_t MQTT_PREFS_V1_PRE_OBSERVER_PAYLOAD_SIZE = 2736;
 static const size_t MQTT_PREFS_V1_PRE_NEIGHBORS_PAYLOAD_SIZE = 2860;
 static const size_t MQTT_PREFS_V1_PRE_FILTER_PAYLOAD_SIZE = 2864;
-static const size_t MQTT_PREFS_V1_FULL_PAYLOAD_SIZE = 2876;
+static const size_t MQTT_PREFS_V1_PRE_BOT_PAYLOAD_SIZE = 2876;
+static const size_t MQTT_PREFS_V1_PRE_BOT_CHAN_PAYLOAD_SIZE = 2878;
+static const size_t MQTT_PREFS_V1_FULL_PAYLOAD_SIZE = 2936;
 
 // /mqtt_prefs starts with a self-describing 8-byte header. Headerless files
 // are deployed legacy layouts and continue to be distinguished by size.
@@ -287,6 +297,10 @@ static_assert(offsetof(MQTTPrefs, mqtt_neighbors_interval) == MQTT_PREFS_V1_PRE_
               "neighbors interval offset must equal the pre-neighbors payload size");
 static_assert(offsetof(MQTTPrefs, mqtt_slot_packet_filter) == MQTT_PREFS_V1_PRE_FILTER_PAYLOAD_SIZE,
               "packet filters must begin at the pre-filter payload boundary");
+static_assert(offsetof(MQTTPrefs, bot_enabled) == MQTT_PREFS_V1_PRE_BOT_PAYLOAD_SIZE,
+              "bot fields must begin at the pre-bot payload boundary");
+static_assert(offsetof(MQTTPrefs, bot_psk_hex) == MQTT_PREFS_V1_PRE_BOT_CHAN_PAYLOAD_SIZE,
+              "bot channel fields must begin at the pre-bot-channel payload boundary");
 static_assert(sizeof(OldMQTTPrefs) == 472, "frozen pre-slot /mqtt_prefs layout changed");
 static_assert(sizeof(PreWifiPowerOldMQTTPrefs) == 472, "frozen pre-WiFi-power /mqtt_prefs layout changed");
 static_assert(offsetof(OldMQTTPrefs, wifi_power_save) == 144,

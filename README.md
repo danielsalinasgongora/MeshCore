@@ -128,9 +128,9 @@ alert test
 
 No publiques la clave del canal en GitHub. Si usas `set alert.psk`, el firmware guarda la clave y puede dejar `alert.hashtag` como `(unset)`, lo cual es normal: la PSK pasa a ser la fuente real del canal.
 
-### Bot privado del observer
+### Bot de comandos del observer
 
-El perfil Chile para Heltec V4 puede responder comandos breves por LoRa, pero solo en el canal privado configurado para alertas. No responde en Public ni en canales públicos conocidos, para evitar spam en la red comunitaria.
+El perfil Chile para Heltec V4 puede responder comandos breves por LoRa. Por defecto queda apagado. Desde la web puedes elegir si el bot pertenece al canal Public o a un canal privado propio configurado por hashtag o PSK.
 
 Comandos disponibles:
 
@@ -150,7 +150,7 @@ wifi conectado | IP 192.168.1.50 | RSSI -41 dBm
 hora UTC 2026-09-15 18:30:00
 ```
 
-Las respuestas están limitadas a una por minuto para que el observer no sature LoRa. Para usarlo, configura un canal privado con `set alert.hashtag` o `set alert.psk` y luego escribe los comandos desde un companion que tenga el mismo canal.
+Las respuestas están limitadas a una por minuto para que el observer no sature LoRa. Puedes habilitarlo desde el panel web en MQTT → LoRa command bot. Por CLI: `set bot on`, `set bot.channel public` para Public, o `set bot.channel private` más `set bot.hashtag <#canal>` / `set bot.psk <clave-hex>` para un canal privado. La PSK del bot se enmascara en la web.
 
 ## 🗺️ Mapas y visibilidad
 

@@ -738,6 +738,111 @@ bool CommonCLI::handleObserverSetCmd(uint32_t sender_timestamp, const char* conf
       _callbacks->onAlertConfigChanged();
       sprintf(reply, "OK - alert.region: %s", _mqtt_prefs.alert_region);
     }
+  } else if (memcmp(config, "bot.channel ", 12) == 0) {
+    const char* val = &config[12];
+    if (strcmp(val, "public") == 0) {
+      _mqtt_prefs.bot_public_enabled = 1;
+      savePrefs();
+      strcpy(reply, "OK - bot.channel public");
+    } else if (strcmp(val, "private") == 0) {
+      _mqtt_prefs.bot_public_enabled = 0;
+      savePrefs();
+      strcpy(reply, "OK - bot.channel private");
+    } else {
+      strcpy(reply, "Error: usage set bot.channel public|private");
+    }
+  } else if (memcmp(config, "bot.psk", 7) == 0 && (config[7] == 0 || config[7] == ' ')) {
+    const char* val = (config[7] == ' ') ? &config[8] : "";
+    while (*val == ' ') val++;
+    size_t len = strlen(val);
+    if (len == 0) {
+      _mqtt_prefs.bot_psk_hex[0] = '\0';
+      _mqtt_prefs.bot_hashtag[0] = '\0';
+      savePrefs();
+      strcpy(reply, "OK - bot.psk cleared");
+    } else if (val[0] == '#') {
+      strcpy(reply, "Error: use 'set bot.hashtag' for hashtag channels");
+    } else if (len != 32) {
+      strcpy(reply, "Error: bot.psk must be 32 hex chars (16-byte channel secret)");
+    } else {
+      uint8_t raw[16];
+      bool all_hex = true;
+      for (size_t i = 0; i < len; i++) {
+        if (!mesh::Utils::isHexChar(val[i])) { all_hex = false; break; }
+      }
+      if (!all_hex || !mesh::Utils::fromHex(raw, 16, val)) {
+        strcpy(reply, "Error: bot.psk must be 32 hex chars (16-byte channel secret)");
+      } else {
+        char normalized[33];
+        mesh::Utils::toHex(normalized, raw, 16);
+        if (const char* banned = alertReporterBannedChannelMatchHex(normalized)) {
+          if (strcmp(banned, "PUBLIC") == 0) {
+            strcpy(reply, "Error: use 'set bot.channel public' for Public");
+          } else {
+            sprintf(reply, "Error: refusing noisy channel '%s'", banned);
+          }
+        } else {
+          StrHelper::strncpy(_mqtt_prefs.bot_psk_hex, normalized, sizeof(_mqtt_prefs.bot_psk_hex));
+          _mqtt_prefs.bot_hashtag[0] = '\0';
+          _mqtt_prefs.bot_public_enabled = 0;
+          savePrefs();
+          strcpy(reply, "OK - bot.psk updated; bot.channel private");
+        }
+      }
+    }
+  } else if (memcmp(config, "bot.hashtag", 11) == 0 && (config[11] == 0 || config[11] == ' ')) {
+    const char* val = (config[11] == ' ') ? &config[12] : "";
+    while (*val == ' ') val++;
+    size_t in_len = strlen(val);
+    if (in_len == 0) {
+      _mqtt_prefs.bot_psk_hex[0] = '\0';
+      _mqtt_prefs.bot_hashtag[0] = '\0';
+      savePrefs();
+      strcpy(reply, "OK - bot.hashtag cleared");
+    } else {
+      char hashtag[sizeof(_mqtt_prefs.bot_hashtag)];
+      size_t need = (val[0] == '#') ? in_len : in_len + 1;
+      if (need >= sizeof(hashtag)) {
+        strcpy(reply, "Error: bot.hashtag too long");
+      } else {
+        if (val[0] == '#') {
+          StrHelper::strncpy(hashtag, val, sizeof(hashtag));
+        } else {
+          hashtag[0] = '#';
+          StrHelper::strncpy(&hashtag[1], val, sizeof(hashtag) - 1);
+        }
+        uint8_t digest[32];
+        mesh::Utils::sha256(digest, sizeof(digest), (const uint8_t*)hashtag, (int)strlen(hashtag));
+        if (const char* banned = alertReporterBannedChannelMatch(digest)) {
+          if (strcmp(banned, "PUBLIC") == 0) {
+            strcpy(reply, "Error: use 'set bot.channel public' for Public");
+          } else {
+            sprintf(reply, "Error: refusing noisy channel '%s'", banned);
+          }
+        } else {
+          char hex[33];
+          mesh::Utils::toHex(hex, digest, 16);
+          StrHelper::strncpy(_mqtt_prefs.bot_hashtag, hashtag, sizeof(_mqtt_prefs.bot_hashtag));
+          StrHelper::strncpy(_mqtt_prefs.bot_psk_hex, hex, sizeof(_mqtt_prefs.bot_psk_hex));
+          _mqtt_prefs.bot_public_enabled = 0;
+          savePrefs();
+          sprintf(reply, "OK - bot.hashtag: %s; bot.channel private", _mqtt_prefs.bot_hashtag);
+        }
+      }
+    }
+  } else if (memcmp(config, "bot ", 4) == 0) {
+    const char* val = &config[4];
+    if (memcmp(val, "on", 2) == 0 && (val[2] == 0 || val[2] == ' ')) {
+      _mqtt_prefs.bot_enabled = 1;
+      savePrefs();
+      strcpy(reply, "OK - bot on");
+    } else if (memcmp(val, "off", 3) == 0 && (val[3] == 0 || val[3] == ' ')) {
+      _mqtt_prefs.bot_enabled = 0;
+      savePrefs();
+      strcpy(reply, "OK - bot off");
+    } else {
+      strcpy(reply, "Error: usage set bot on|off");
+    }
   } else if (memcmp(config, "alert.wifi ", 11) == 0) {
     int mins = (int)_atoi(&config[11]);
     if (mins < 0 || mins > 1440) {
@@ -1005,6 +1110,14 @@ bool CommonCLI::handleObserverGetCmd(uint32_t sender_timestamp, const char* conf
     bool valid = MQTTBridge::isConfigValid(&_mqtt_prefs);
     sprintf(reply, "> %s", valid ? "valid" : "invalid");
 #endif
+  } else if (memcmp(config, "bot.channel", 11) == 0) {
+    sprintf(reply, "> %s", _mqtt_prefs.bot_public_enabled ? "public" : "private");
+  } else if (sender_timestamp == 0 && memcmp(config, "bot.psk", 7) == 0) {
+    sprintf(reply, "> %s", _mqtt_prefs.bot_psk_hex[0] ? _mqtt_prefs.bot_psk_hex : "(unset)");
+  } else if (memcmp(config, "bot.hashtag", 11) == 0) {
+    sprintf(reply, "> %s", _mqtt_prefs.bot_hashtag[0] ? _mqtt_prefs.bot_hashtag : "(unset)");
+  } else if (memcmp(config, "bot", 3) == 0 && (config[3] == 0 || config[3] == '\n' || config[3] == '\r')) {
+    sprintf(reply, "> %s", _mqtt_prefs.bot_enabled ? "on" : "off");
   } else if (memcmp(config, "alert.hashtag", 13) == 0) {
     sprintf(reply, "> %s", _mqtt_prefs.alert_hashtag[0] ? _mqtt_prefs.alert_hashtag : "(unset)");
   } else if (sender_timestamp == 0 && memcmp(config, "alert.psk", 9) == 0) {  // from serial command line only

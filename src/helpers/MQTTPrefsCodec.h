@@ -39,6 +39,8 @@ struct DecodePlan {
 static const size_t kV1PreObserverPayloadSize = MQTT_PREFS_V1_PRE_OBSERVER_PAYLOAD_SIZE;
 static const size_t kV1PreNeighborsPayloadSize = MQTT_PREFS_V1_PRE_NEIGHBORS_PAYLOAD_SIZE;
 static const size_t kV1PreFilterPayloadSize = MQTT_PREFS_V1_PRE_FILTER_PAYLOAD_SIZE;
+static const size_t kV1PreBotPayloadSize = MQTT_PREFS_V1_PRE_BOT_PAYLOAD_SIZE;
+static const size_t kV1PreBotChannelPayloadSize = MQTT_PREFS_V1_PRE_BOT_CHAN_PAYLOAD_SIZE;
 static const size_t kV1BaselinePayloadSize = MQTT_PREFS_V1_FULL_PAYLOAD_SIZE;
 static const size_t kEncodedSize = sizeof(MQTTPrefsHeader) + kV1BaselinePayloadSize;
 
@@ -54,10 +56,11 @@ static const size_t kEncodedSize = sizeof(MQTTPrefsHeader) + kV1BaselinePayloadS
 // Touching any filter opts that node into the longer payload — a deliberate,
 // operator-initiated trade rather than a side effect of upgrading.
 inline size_t payloadLenFor(const MQTTPrefs& prefs) {
-  return MQTTPacketFilter::allMasksDefault(prefs.mqtt_slot_packet_filter,
-                                           MQTT_PREFS_SLOT_COUNT)
-      ? kV1PreFilterPayloadSize
-      : kV1BaselinePayloadSize;
+  const bool filters_default = MQTTPacketFilter::allMasksDefault(prefs.mqtt_slot_packet_filter,
+                                                                 MQTT_PREFS_SLOT_COUNT);
+  const bool bot_default = prefs.bot_enabled == 0 && prefs.bot_public_enabled == 0
+      && prefs.bot_psk_hex[0] == '\0' && prefs.bot_hashtag[0] == '\0';
+  return (filters_default && bot_default) ? kV1PreFilterPayloadSize : kV1BaselinePayloadSize;
 }
 
 inline MQTTPrefsHeader makeHeader(size_t payload_len) {
@@ -137,6 +140,12 @@ inline DecodePlan classify(const uint8_t* prefix, size_t prefix_read, size_t fil
       }
       if (header.payload_len == kV1BaselinePayloadSize) {
         return {Source::Current, false, false, true, kV1BaselinePayloadSize};
+      }
+      if (header.payload_len == kV1PreBotChannelPayloadSize) {
+        return {Source::Current, false, false, true, kV1PreBotChannelPayloadSize};
+      }
+      if (header.payload_len == kV1PreBotPayloadSize) {
+        return {Source::Current, false, false, true, kV1PreBotPayloadSize};
       }
       if (header.payload_len == kV1PreFilterPayloadSize) {
         // Written before the per-slot packet-filter tail. Defaults supply an

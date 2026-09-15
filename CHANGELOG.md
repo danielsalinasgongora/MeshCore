@@ -1,6 +1,6 @@
 ## Unreleased
 
-- Added a MeshChile Heltec V4 private alert-channel bot for `#ping`, `#status`, `#wifi`, and `#hora`; responses are rate-limited and only work on the configured private alert channel.
+- Added a MeshChile Heltec V4 command bot for `#ping`, `#status`, `#wifi`, and `#hora`, with web/CLI enable flags and a configurable bot channel: Public or a private hashtag/PSK. Responses are rate-limited to protect LoRa airtime.
 
 ## MeshChile observer profile
 

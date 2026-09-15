@@ -744,6 +744,10 @@ void WebConfigServer::handleConfigGet(AsyncWebServerRequest* req) {
     mqtt["email"] = (const char*)_obs->mqtt_email;
     mqtt["snmp"] = (bool)_obs->snmp_enabled;
     mqtt["snmp_community"] = (const char*)_obs->snmp_community;
+    mqtt["bot"] = (bool)_obs->bot_enabled;
+    mqtt["bot_channel"] = _obs->bot_public_enabled ? "public" : "private";
+    mqtt["bot_hashtag"] = (const char*)_obs->bot_hashtag;
+    mqtt["bot_psk"] = _obs->bot_psk_hex[0] ? SECRET_SENTINEL : "";
 
     JsonArray slots = mqtt.createNestedArray("slots");
     for (int i = 0; i < MAX_MQTT_SLOTS; i++) {

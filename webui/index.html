@@ -463,6 +463,21 @@ body.tab-cli{padding-bottom:0}
         <span class="tgl"><input type="checkbox" data-k="snmp"><u></u></span></div>
       <div class="f"><label>SNMP community</label><input type="text" data-k="snmp.community" maxlength="23" autocapitalize="off"></div>
     </div>
+    <div class="card">
+      <h2>LoRa command bot</h2>
+      <div class="note">When enabled, the observer answers simple group commands: <b>#ping</b>, <b>#status</b>, <b>#wifi</b>, and <b>#hora</b>. Replies are rate-limited to protect airtime.</div>
+      <div class="sw"><span><b>Enable bot</b><i>Answer commands on the selected channel</i></span>
+        <span class="tgl"><input type="checkbox" data-k="bot"><u></u></span></div>
+      <div class="f"><label>Bot channel</label>
+        <select data-k="bot.channel"><option value="private">Private channel</option><option value="public">Public</option></select>
+        <div class="hint">Choose Public, or choose Private and set a hashtag or PSK below.</div></div>
+      <div class="row">
+        <div class="f"><label>Private hashtag</label><input type="text" data-k="bot.hashtag" maxlength="23" autocapitalize="off" placeholder="#my-bot-channel">
+          <div class="hint">Optional. The node derives the private channel key from the hashtag.</div></div>
+        <div class="f"><label>Private PSK</label><input type="password" data-k="bot.psk" maxlength="32" autocomplete="off" placeholder="32 hex chars">
+          <div class="hint">Optional. Paste a 16-byte channel key as 32 hex characters.</div></div>
+      </div>
+    </div>
   </div>
 
   <div id="t-wifi" class="hide">
@@ -707,6 +722,8 @@ function cfgVal(k){ // map a `set` key to its current value string, from st.cfg
     case"mqtt.owner":return q.owner;case"mqtt.email":return q.email;
     case"timezone":return q.timezone;case"timezone.offset":return String(q.timezone_offset);
     case"snmp":return q.snmp?"on":"off";case"snmp.community":return q.snmp_community;
+    case"bot":return q.bot?"on":"off";case"bot.channel":return q.bot_channel||"private";
+    case"bot.hashtag":return q.bot_hashtag||"";case"bot.psk":return q.bot_psk||"";
   }
   return"";
 }
@@ -1374,7 +1391,7 @@ function buildReview(){
     var p=eff("mqtt"+i+".preset");
     if(p&&p!=="none")row("Slot "+i,p);
   }
-  var extra=Object.keys(d).filter(function(k){return!/^(wifi\.|password$|name$|radio$|tx$|repeat$|mqtt\.origin|mqtt\.iata|mqtt\.owner|mqtt\.email|mqtt[1-9]\.)/.test(k)}).length;
+  var extra=Object.keys(d).filter(function(k){return!/^(wifi\.|password$|name$|radio$|tx$|repeat$|mqtt\.origin|mqtt\.iata|mqtt\.owner|mqtt\.email|bot$|bot\.channel$|bot\.hashtag$|bot\.psk$|mqtt[1-9]\.)/.test(k)}).length;
   if(extra)row("Other changes",extra+" setting(s)");
   $("#wz-review").innerHTML=rows.join("");
 }
@@ -1573,6 +1590,10 @@ var CLI_KEYS=[
   ["alert.hashtag","Alert channel hashtag",0],
   ["alert.region","Alert region filter",0],
   ["alert.interval","Minimum minutes between alerts",0],
+  ["bot","Enable command bot",0,"on|off"],
+  ["bot.channel","Bot channel",0,"public|private"],
+  ["bot.hashtag","Bot private hashtag",0],
+  ["bot.psk","Bot private pre-shared key",0],
   ["alert.mqtt","Send alerts to MQTT",0,"on|off"],
   ["alert.wifi","Alert on WiFi problems",0,"on|off"],
   ["bridge.enabled","Serial packet bridge",0,"on|off"],
