@@ -274,29 +274,6 @@ get mqtt.tx
 Debe estar en `on`.
 
 
-## Publicar binarios descargables en GitHub
-
-Este fork incluye un workflow de GitHub Actions llamado **Build Chile Observer Firmware**. Sirve para compilar automáticamente el firmware Heltec V4 Chile y dejar archivos descargables.
-
-Para publicar una versión para la comunidad:
-
-```bash
-git tag chile-observer-v1.0.0
-git push origin chile-observer-v1.0.0
-```
-
-GitHub Actions compilará el target `heltec_v4_repeater_observer_mqtt_chile` y creará un Release con los binarios.
-
-Para flasheo limpio por USB en HELTEC V4, descarga desde el Release el archivo que termina en:
-
-```text
--merged.bin
-```
-
-Ese archivo contiene bootloader, particiones y firmware en una sola imagen para ESP32. Después del flash, cada usuario configura sus datos propios desde serial o desde el panel web.
-
-También puedes ejecutar el workflow manualmente desde **Actions → Build Chile Observer Firmware → Run workflow**. En ese caso GitHub deja el firmware como artifact descargable del run; para crear un Release público, usa un tag `chile-observer-v...`.
-
 ## Documentación adicional
 
 - Firmware base original: [agessaman/MeshCore](https://github.com/agessaman/MeshCore)
