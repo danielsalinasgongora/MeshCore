@@ -10,7 +10,7 @@ This fork adds a public Chile observer profile for Heltec V4 devices running the
 - MQTT slot 1: `meshchile`, using `wss://mqtt-msc.meshchile.cl:443/mqtt` with JWT device authentication, audience `mqtt-msc.meshchile.cl`, and the Let's Encrypt / ISRG Root X1 certificate chain used by the broker.
 - MQTT slot 2: `analyzer-eu`.
 - MQTT slot 3: `meshmapper`.
-- MQTT status, packets, RX, and advert TX are enabled by the upstream observer defaults.
+- MQTT status, packets, RX, and advert TX are enabled by the upstream observer defaults. Use `mqtt.tx on` when the command bot should publish its replies to MQTT-backed maps.
 - Time zone: `America/Santiago`.
 - NTP primary server: `ntp.shoa.cl`, with the upstream fallback servers still available.
 - OLED status page shows node name, radio, TX power, path hash byte size, and Wi-Fi/IP state.
@@ -61,7 +61,7 @@ set mqtt3.preset meshmapper
 set mqtt.rx on
 set mqtt.packets on
 set mqtt.status on
-set mqtt.tx advert
+set mqtt.tx on
 set mqtt.ntp ntp.shoa.cl
 set timezone America/Santiago
 reboot
@@ -75,7 +75,7 @@ The public firmware image intentionally does not include operator credentials, n
 
 The web panel includes a CLI terminal that can run the same safe node commands as the serial console, including `advert`, `get wifi.status`, `get mqtt.ntp.diag`, and `alert test`.
 
-Direct chat-style LoRa messages are companion/client behavior. The Chile observer profile also includes a command bot that can answer `#ping`, `#status`, `#wifi`, and `#hora`. It is disabled by default. When enabled, its own channel selector can target either Public or a private bot channel configured by hashtag/PSK from the web panel or CLI. Fault alerts still use the alert-channel guard and continue to reject Public as an alert destination. The observer firmware can transmit configured alert text with `alert test` when an alert channel is configured, and it can publish its own adverts/status to MQTT/maps.
+Direct chat-style LoRa messages are companion/client behavior. The Chile observer profile also includes a command bot that can answer `#ping`, `#status`, `#wifi`, and `#hora`. It is disabled by default. When enabled, its own channel selector can target either Public or a private bot channel configured by hashtag/PSK from the web panel or CLI. Fault alerts still use the alert-channel guard and continue to reject Public as an alert destination. The observer firmware can transmit configured alert text with `alert test` when an alert channel is configured, and it can publish its own adverts/status to MQTT/maps. If `mqtt.tx` is left at `advert`, bot replies go out over LoRa but are not uploaded as message packets; set `mqtt.tx on` to see bot replies on MQTT-backed message maps.
 
 ## Map visibility
 
