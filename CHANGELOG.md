@@ -1,5 +1,6 @@
 ## Unreleased
 
+- Updated the MeshChile MQTT preset to trust the broker's current Let's Encrypt / ISRG Root X1 TLS chain.
 - Added a MeshChile Heltec V4 command bot for `#ping`, `#status`, `#wifi`, and `#hora`, with web/CLI enable flags and a configurable bot channel: Public or a private hashtag/PSK. Responses are rate-limited to protect LoRa airtime.
 
 ## MeshChile observer profile

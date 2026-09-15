@@ -7,7 +7,7 @@ This fork adds a public Chile observer profile for Heltec V4 devices running the
 - LoRa radio: `927.875 MHz`, `62.5 kHz`, `SF8`, `CR5`.
 - Transmit power preference: `22 dBm`.
 - Default path hash mode: `1`, which MeshCore uses as 2-byte path hashes.
-- MQTT slot 1: `meshchile`, using `wss://mqtt-msc.meshchile.cl:443/mqtt` with JWT device authentication and audience `mqtt-msc.meshchile.cl`.
+- MQTT slot 1: `meshchile`, using `wss://mqtt-msc.meshchile.cl:443/mqtt` with JWT device authentication, audience `mqtt-msc.meshchile.cl`, and the Let's Encrypt / ISRG Root X1 certificate chain used by the broker.
 - MQTT slot 2: `analyzer-eu`.
 - MQTT slot 3: `meshmapper`.
 - MQTT status, packets, RX, and advert TX are enabled by the upstream observer defaults.
