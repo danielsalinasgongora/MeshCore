@@ -273,18 +273,6 @@ get mqtt.tx
 
 Debe estar en `on`.
 
-## Seguridad antes de publicar cambios
-
-No subas al repositorio:
-
-- Claves WiFi.
-- Contraseñas admin.
-- Llaves privadas MeshCore.
-- Coordenadas exactas de una casa o sitio sensible.
-- PSK de canales privados.
-- Nombres de canales privados que identifiquen una instalación local.
-
-Este fork debe servir a la comunidad como firmware base para observers en Chile, dejando los datos privados para configuración local por web o serial.
 
 ## Documentación adicional
 
@@ -297,3 +285,4 @@ Este fork debe servir a la comunidad como firmware base para observers en Chile,
 ## Licencia
 
 Este fork mantiene la licencia MIT del proyecto MeshCore original. Revisa el repositorio upstream para los detalles completos de licencia y atribución.
+
