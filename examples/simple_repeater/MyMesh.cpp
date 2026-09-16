@@ -672,30 +672,33 @@ void MyMesh::onGroupDataRecv(mesh::Packet* packet, uint8_t type, const mesh::Gro
   _qta_bot_next_reply_ms = now_ms + QTA_PRIVATE_BOT_REPLY_INTERVAL_MS;
 
   char reply[160];
+  const char* node_name = _prefs.node_name[0] ? _prefs.node_name : "node";
+  unsigned long uptime_min = uptime_millis / 60000UL;
   if (strcmp(cmd, "#ping") == 0) {
-    snprintf(reply, sizeof(reply), "pong | SNR %.2f dB | RSSI %.0f dBm | %u hops",
-             packet->getSNR(), _radio->getLastRSSI(), (unsigned)packet->getPathHashCount());
+    snprintf(reply, sizeof(reply), "🏓 pong | SNR %.2f dB | RSSI %.0f dBm | uptime %lumin | %u hops | %s",
+             packet->getSNR(), _radio->getLastRSSI(), uptime_min,
+             (unsigned)packet->getPathHashCount(), node_name);
   } else if (strcmp(cmd, "#status") == 0) {
-    snprintf(reply, sizeof(reply), "estoy aqui | %s | uptime %lumin | RX %lu | TX %lu | Hash:%u-byte",
-             _prefs.node_name, uptime_millis / 60000UL,
+    snprintf(reply, sizeof(reply), "📡 status | uptime %lumin | RX %lu | TX %lu | Hash:%u-byte | %s",
+             uptime_min,
              (unsigned long)radio_driver.getPacketsRecv(),
              (unsigned long)radio_driver.getPacketsSent(),
-             (unsigned)(_prefs.path_hash_mode + 1));
+             (unsigned)(_prefs.path_hash_mode + 1), node_name);
   } else if (strcmp(cmd, "#wifi") == 0) {
 #if defined(ESP32)
     if (WiFi.status() == WL_CONNECTED) {
-      snprintf(reply, sizeof(reply), "wifi conectado | IP %s | RSSI %d dBm", WiFi.localIP().toString().c_str(), WiFi.RSSI());
+      snprintf(reply, sizeof(reply), "📶 wifi | IP %s | RSSI %d dBm | %s", WiFi.localIP().toString().c_str(), WiFi.RSSI(), node_name);
     } else {
-      snprintf(reply, sizeof(reply), "wifi desconectado");
+      snprintf(reply, sizeof(reply), "📶 wifi desconectado | %s", node_name);
     }
 #else
-    snprintf(reply, sizeof(reply), "wifi no disponible en este hardware");
+    snprintf(reply, sizeof(reply), "📶 wifi no disponible | %s", node_name);
 #endif
   } else {
     uint32_t now = getRTCClock()->getCurrentTime();
     DateTime dt = DateTime(now);
-    snprintf(reply, sizeof(reply), "hora UTC %04d-%02d-%02d %02d:%02d:%02d",
-             dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second());
+    snprintf(reply, sizeof(reply), "🕒 hora UTC %04d-%02d-%02d %02d:%02d:%02d | %s",
+             dt.year(), dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second(), node_name);
   }
   mesh::GroupChannel reply_channel = channel;
   sendBotReply(reply_channel, reply);

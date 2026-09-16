@@ -180,10 +180,10 @@ Comandos disponibles desde el canal elegido:
 Ejemplos de respuesta:
 
 ```text
-pong | SNR -1.50 dB | RSSI -114 dBm | 2 hops
-estoy aqui | QTA_OBSERVER | uptime 35min | RX 120 | TX 8 | Hash:2-byte
-wifi conectado | IP 192.168.1.50 | RSSI -41 dBm
-hora UTC 2026-09-15 18:30:00
+🏓 pong | SNR -1.50 dB | RSSI -114 dBm | uptime 35min | 2 hops | QTA_OBSERVER
+📡 status | uptime 35min | RX 120 | TX 8 | Hash:2-byte | QTA_OBSERVER
+📶 wifi | IP 192.168.1.50 | RSSI -41 dBm | QTA_OBSERVER
+🕒 hora UTC 2026-09-15 18:30:00 | QTA_OBSERVER
 ```
 
 El bot responde como máximo una vez por minuto para no saturar LoRa. Si mandas varios comandos seguidos, espera 60 segundos entre pruebas.
